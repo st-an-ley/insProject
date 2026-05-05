@@ -22,6 +22,7 @@ class Client:
 
 
 def main():
+    #Create client for each use case like the live stream to streamlit, the video analyzing, the audio analyzing, etc.
     client_stream = Client("STREAM", "5555")
     client_audio = Client("AUDIO", "5556")
     client_video = Client("VIDEO", "5557")
