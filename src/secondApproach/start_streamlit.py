@@ -1,3 +1,38 @@
+import streamlit as st
+import zmq
+import sys
+
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
+def start_streamlit():
+    videoPort = sys.argv[1]
+    audioPort = sys.argv[2]
 
+    context = zmq.Context()
+
+    #SUBSCRIBER socket for video with corresponding port
+    socket_video_sub = context.socket(zmq.SUB)
+    socket_video_sub.connect(f"tcp://localhost:{videoPort}")
+    socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'videoInput')
+
+    #SUBSCRIBER socket for audio with corresponding port
+    socket_audio_sub = context.socket(zmq.SUB)
+    socket_audio_sub.connect(f"tcp://localhost:{audioPort}")
+    socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'audioInput')
+
+    st.title("Remote exam surveillance")
+    placeholder = st.empty()
+
+    while True:
+        topic = socket_video_sub.recv_string()
+        videoData = socket_video_sub.recv_pyobj()
+        audioData = socket_audio_sub.recv_pyobj()
+
+        placeholder.image(videoData, channels="BGR")
+        #TODO find a way to display audio
+
+def main():
+    start_streamlit()
+
+if __name__ == "__main__":
+    main()
