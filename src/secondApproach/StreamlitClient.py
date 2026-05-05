@@ -1,11 +1,10 @@
 import zmq
 import streamlit as st
+from CLIENT import Client
 
-#defining what every client has in common
-class Client:
-    ID = 0 #Number of created Clients
-    def __init__(self, useCase, port, messagingType="SUB", protocol="tcp"):
-        #Set the attributes to determine the type of client
+class streamlitClient(Client):
+    def __init__(self, useCase, port,  messagingType="SUB", protocol="tcp"):
+                #Set the attributes to determine the type of client
         self.useCase = useCase
         self.messagingType = messagingType
         self.protocol = protocol
@@ -21,7 +20,10 @@ class Client:
         socket_sub.connect(f"{self.protocol}://localhost:{self.port}")
         socket_sub.setsockopt(zmq.SUBSCRIBE, f"{self.useCase}.encode()") # encode() turns data into it's binary form
     
+        st.title("Remote exam surveillance")
+        placeholder = st.empty()
+
         while True:
             topic = socket_sub.recv_string()
             data = socket_sub.recv_pyobj()
-
+            placeholder.image(data, channels="BGR")
