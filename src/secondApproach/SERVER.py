@@ -4,11 +4,9 @@ import cv2
 import pyaudio
 import wave
 
-
+# Server which captures the data and sends it to clients who request it
 class Server:
     def __init__():
-        # Server which captures the data and sends it to clients who request it
-
 
         chunk = 2048  # Record in chunks of 1024 samples
         sample_format = pyaudio.paInt32  # 16 bits per sample
@@ -18,8 +16,6 @@ class Server:
         filename = "output.wav"
 
 
-
-        
         context = zmq.Context()
 
         socket_pub_video = context.socket(zmq.PUB)
