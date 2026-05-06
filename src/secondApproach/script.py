@@ -22,18 +22,26 @@ def main():
     #Use package multiprocessing to run the run-method of each object in a different process
     #Like this, they can all run at the same time and asynchronous
     #target and args as arguments for Process()
+
+    #target=x.run determines that in each process the run method of the object is executed after being started
     server_process = multiprocessing.Process(target=server.run)
     client_video_process = multiprocessing.Process(target=client_video.run)
     client_audio_process = multiprocessing.Process(target=client_audio.run)
 
 
-    #Starting each process
+    #Starting each process, so executing the run method of each object
     server_process.start()
     client_video_process.start()
     client_audio_process.start()
 
-
-    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py", "6001", "7001"], stdout = sys.stdout, stderr = sys.stderr)
+    #Starting streamlit as a program by using the package subprocess
+    streamlitVideoInputPort = client_video.PUBport
+    streamlitAudioInputPort = client_audio.PUBport
+    print("streamlitVideoInputPort", streamlitVideoInputPort)
+    print("streamlitAudioInputPort", streamlitAudioInputPort)
+    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py", f"{streamlitVideoInputPort}", f"{streamlitAudioInputPort}"], stdout = sys.stdout, stderr = sys.stderr)
+    
+    
     print("main process id", os.getpid())
     print("Server Process id", server_process.pid)
     print("Client Video Process id", client_video_process.pid)

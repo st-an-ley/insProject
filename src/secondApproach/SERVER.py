@@ -36,8 +36,12 @@ class Server:
         self.topic_video = "videoInput"
         self.topic_audio = "audioInput"
 
+        #Create zmq Context to handle all the data transfers
         self.context = zmq.Context()
 
+
+        #PUBLISHING VIDEO OVER PORT 5001 AND AUDIO OVER PORT 5002
+        #EVERY CLIENT RECEIVES THE DATA OVER THOSE TOPICS
         #PUBLISHER socket for sending video feed
         self.socket_pub_video = self.context.socket(zmq.PUB)
         self.socket_pub_video.bind("tcp://*:5001")
@@ -49,13 +53,15 @@ class Server:
 
         i = 0
         while True:
-            #Read status and data from camera
-            active, frameData = self.camera.read()
+            #Read status and video input from camera
+            active, videoInput = self.camera.read()
+
+            #Read audio data from microphone
             audioInput = self.stream.read(self.chunk)
 
 
             #Display camera input with opencv
-            cv2.imshow("CameraInput", frameData)
+            #cv2.imshow("CameraInput", frameData)
             #Check for keyboard input 'q' = 113 in ASCII
             if cv2.waitKey(1) == 113:
                 break
@@ -65,7 +71,7 @@ class Server:
             #Name of Topic is the first bytes of the message
             #zmq.SNDMORE signals that more data will come (and not only the name of the topic)
             self.socket_pub_video.send_string(self.topic_video, zmq.SNDMORE)
-            self.socket_pub_video.send_pyobj(frameData)
+            self.socket_pub_video.send_pyobj(videoInput)
             #print(f"Sent frame {i}")
 
             self.socket_pub_audio.send_string(self.topic_audio, zmq.SNDMORE)

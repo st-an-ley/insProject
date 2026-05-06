@@ -6,19 +6,22 @@ import sys
 
 def start_streamlit():
     #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
-    videoPort = sys.argv[1]
-    audioPort = sys.argv[2]
+    videoInputPort = sys.argv[1]
+    audioInputPort = sys.argv[2]
+
+    print("StreamlitVideoInputPort", videoInputPort)
+    print("StreamlitAudioInputPort", audioInputPort)
 
     context = zmq.Context()
 
     #SUBSCRIBER socket for video with corresponding port
     socket_video_sub = context.socket(zmq.SUB)
-    socket_video_sub.connect(f"tcp://localhost:{videoPort}")
+    socket_video_sub.connect(f"tcp://localhost:{videoInputPort}")
     socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'videoInput')
 
     #SUBSCRIBER socket for audio with corresponding port
     socket_audio_sub = context.socket(zmq.SUB)
-    socket_audio_sub.connect(f"tcp://localhost:{audioPort}")
+    socket_audio_sub.connect(f"tcp://localhost:{audioInputPort}")
     socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'audioInput')
 
     st.title("Remote exam surveillance")
@@ -29,6 +32,7 @@ def start_streamlit():
         videoData = socket_video_sub.recv_pyobj()
         audioData = socket_audio_sub.recv_pyobj()
 
+        print(videoData)
         placeholder.image(videoData, channels="BGR")
         #TODO find a way to display audio
 
