@@ -35,11 +35,9 @@ def main():
     client_audio_process.start()
 
     #Starting streamlit as a program by using the package subprocess
-    streamlitVideoInputPort = client_video.PUBport
-    streamlitAudioInputPort = client_audio.PUBport
-    print("streamlitVideoInputPort", streamlitVideoInputPort)
-    print("streamlitAudioInputPort", streamlitAudioInputPort)
-    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py", f"{streamlitVideoInputPort}", f"{streamlitAudioInputPort}"], stdout = sys.stdout, stderr = sys.stderr)
+    print("video client output port", client_video.PUBport)
+    print("audio client output port", client_audio.PUBport)
+    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py", f"{client_video.PUBport}", f"{client_audio.PUBport}"], stdout = sys.stdout, stderr = sys.stderr)
     
     
     print("main process id", os.getpid())

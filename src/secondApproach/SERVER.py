@@ -70,11 +70,11 @@ class Server:
             #Publishing the data over a specified topic to all the clients
             #Name of Topic is the first bytes of the message
             #zmq.SNDMORE signals that more data will come (and not only the name of the topic)
-            self.socket_pub_video.send_string(self.topic_video, zmq.SNDMORE)
+            #self.socket_pub_video.send_string(self.topic_video, zmq.SNDMORE)
             self.socket_pub_video.send_pyobj(videoInput)
             #print(f"Sent frame {i}")
 
-            self.socket_pub_audio.send_string(self.topic_audio, zmq.SNDMORE)
+            #self.socket_pub_audio.send_string(self.topic_audio, zmq.SNDMORE)
             self.socket_pub_audio.send_pyobj(audioInput)
             #print(f"Sent audio data {i}")
             #print(audioInput)

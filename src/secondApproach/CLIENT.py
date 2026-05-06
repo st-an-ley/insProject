@@ -2,7 +2,7 @@ import zmq
 import streamlit as st
 from abc import ABC, abstractmethod
 
-#Abstract Class Client
+#Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
     ID = 0 #Number of created Clients
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
@@ -15,14 +15,17 @@ class Client(ABC):
 
         #EVERY CLIENT RECEIVES THE VIDEO AND AUDIO INPUT OVER THOSE PORTS
         self.videoSUBport = 5001  #Port that the server sends the video data from 
-        self.audioSUBport = 5002
+        self.audioSUBport = 5002  #Port that the server sends the audio data from
 
-        self.PUBport = 6000 + Client.ID*1000 + 1 #5002, 6002, 7002, etc. 
+        #Store current class ID as object ID
         self.ID = Client.ID
+
+        #Port that the client sends its outpot from 
+        self.PUBport = 6000 + self.ID*1000 + 1 #6002, 7002, 8002, etc. 
         print(f"Created Client for {self.useCase} with ID {self.ID}")
         Client.ID = Client.ID+1
 
- 
+ ############################################################################################################
 
 #Define each client with its specific tasks
 
@@ -33,17 +36,16 @@ class videoProcessing_client(Client):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
     
     #run method for this client only uses data from port 5001, so only video, no audio
-
+    #Every client processing video will need to receive data from port 5001
     def run(self):
         #Everything related to zmq must be initialized outside the __init__ method because
         #zmq-Objects cant be passed to pickle which is used by multiprocess 
-        #TODO add socket for audio input, currently only socket for video input 
         self.context = zmq.Context()
         
         #Create SUBSCRIBER socket to receive data from the Server
         self.socket_video_sub = self.context.socket(zmq.SUB)   
         #TODO Look if topic name must be specified since different ports are used
-        self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"Test") # encode() turns data into it's binary form
+        self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
         #f"{self.useCase}.encode('utf-8')"
         self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}")
 
@@ -52,10 +54,11 @@ class videoProcessing_client(Client):
         self.socket_pub.bind(f"{self.protocol}://*:{self.PUBport}")
 
         while True:
-            topicInput = self.socket_sub.recv_string()
-            dataInput = self.socket_sub.recv_pyobj()
+            #topicInput = self.socket_video_sub.recv_string()
+            dataInput = self.socket_video_sub.recv_pyobj()
             #TODO change dataInput to the processed data
             dataOutput = self.processVideo(dataInput)
+            #TODO change dataInput to dataOutput; Right now because of test reasons
             self.socket_pub.send_pyobj(dataInput)
         
     #Method to process a video input in any kind of way
@@ -63,7 +66,7 @@ class videoProcessing_client(Client):
     def processVideo(self, videoInput):
         pass
 
-
+############################################################################################################
 
 #Abstract class for analyzing the audio input in any kind of way
 class audioProcessing_client(Client):
@@ -71,9 +74,9 @@ class audioProcessing_client(Client):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
 
     #run method for this client only uses data from port 5002, so only audio, no video
-    
+    #Every client processing audio will need to receive data from port 5002
     def run(self):
-                #Everything related to zmq must be initialized outside the __init__ method because
+        #Everything related to zmq must be initialized outside the __init__ method because
         #zmq-Objects cant be passed to pickle which is used by multiprocess 
         #TODO add socket for audio input, currently only socket for video input 
         self.context = zmq.Context()
@@ -81,7 +84,7 @@ class audioProcessing_client(Client):
         #Create SUBSCRIBER socket to receive data from the Server
         self.socket_audio_sub = self.context.socket(zmq.SUB)   
         #TODO Look if topic name must be specified since different ports are used
-        self.socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b"Test") # encode() turns data into it's binary form
+        self.socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
         #f"{self.useCase}.encode('utf-8')"
         self.socket_audio_sub.connect(f"{self.protocol}://localhost:{self.audioSUBport}")
 
@@ -90,19 +93,17 @@ class audioProcessing_client(Client):
         self.socket_pub.bind(f"{self.protocol}://*:{self.PUBport}")
 
         while True:
-            topicInput = self.socket_audio_sub.recv_string()
+            #topicInput = self.socket_audio_sub.recv_string()
             dataInput = self.socket_audio_sub.recv_pyobj()
-            #TODO change dataInput to the processed data
-            dataOutput = self.processVideo(dataInput)
+            dataOutput = self.processAudio(dataInput)
+            #TODO change dataInput to dataOuput; right now for test reasons
             self.socket_pub.send_pyobj(dataInput)
         
     @abstractmethod
     def processAudio(self, audioInput):
         pass
 
-
-
-
+############################################################################################################
 
 #Specifif use case for processing the video input, in this case for checking video input for cheating
 class checkVideoFeedCheating_client(videoProcessing_client):
@@ -114,10 +115,11 @@ class checkVideoFeedCheating_client(videoProcessing_client):
 
 
     #Overrites the methods from the parent class; Will be automatically called when executed on child class
-    def processVideo():
+    def processVideo(self, videoInput):
         print("Running processVideo() from checkVideoFeedCheating_client")
-        #TODO Implement methods to check for cheating 
+        #TODO Implement methods to check for cheating in video
 
+############################################################################################################
 
 #Specifif use case for processing the video input, in this case for checking video input for cheating
 class checkAudioFeedCheating_client(audioProcessing_client):
@@ -128,8 +130,10 @@ class checkAudioFeedCheating_client(audioProcessing_client):
         audioProcessing_client.run(self)
     
     #Overrites the methods from the parent class; Will be automatically called when executed on child class
-    def processAudio():
+    def processAudio(self, audioInput):
         print("Running processAudio() from checkAudioFeedCheating_client")
-        #TODO Implement methods to check for cheating 
+        #TODO Implement methods to check for cheating in audio
+
+############################################################################################################
 
 #TODO add further client types

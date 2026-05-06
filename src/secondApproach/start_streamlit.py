@@ -9,26 +9,23 @@ def start_streamlit():
     videoInputPort = sys.argv[1]
     audioInputPort = sys.argv[2]
 
-    print("StreamlitVideoInputPort", videoInputPort)
-    print("StreamlitAudioInputPort", audioInputPort)
-
     context = zmq.Context()
 
     #SUBSCRIBER socket for video with corresponding port
     socket_video_sub = context.socket(zmq.SUB)
     socket_video_sub.connect(f"tcp://localhost:{videoInputPort}")
-    socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'videoInput')
+    socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
     #SUBSCRIBER socket for audio with corresponding port
     socket_audio_sub = context.socket(zmq.SUB)
     socket_audio_sub.connect(f"tcp://localhost:{audioInputPort}")
-    socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'audioInput')
+    socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
     st.title("Remote exam surveillance")
     placeholder = st.empty()
 
     while True:
-        topic = socket_video_sub.recv_string()
+        #topic = socket_video_sub.recv_string()
         videoData = socket_video_sub.recv_pyobj()
         audioData = socket_audio_sub.recv_pyobj()
 
