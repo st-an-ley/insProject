@@ -13,13 +13,10 @@ class Server:
 
     def run(self):
         #Settings for handling with pyAudio
-        self.chunk = 512  # 512 samples sent per package, smaller latency but higher cpu usage
-        self.sample_format = pyaudio.paInt16  # 16 bits per sample
-        self.channels = 1 #1=mono, 2=stereo (left and right ear)
-        self.fs = 16000  # Record at 16000 samples per second
-        self.input_device_index=None
-        self.output_device_index=None
-
+        self.chunk = 2048  # Record in chunks of 1024 samples
+        self.sample_format = pyaudio.paInt32  # 16 bits per sample
+        self.channels = 2
+        self.fs = 44100  # Record at 44100 samples per second
         self.seconds = 3
         self.filename = "output.wav"
 
@@ -29,16 +26,11 @@ class Server:
         #Source for audio Input
         self.audio = pyaudio.PyAudio()
 
-        self.stream = self.audio.open(
-                        format=self.sample_format,
+        self.stream = self.audio.open(format=self.sample_format,
                         channels=self.channels,
                         rate=self.fs,
                         frames_per_buffer=self.chunk,
-                        input_device_index=self.input_device_index,
-                        output_device_index=self.output_device_index,
-                        input=True,
-                        start=True
-                        )
+                        input=True)
 
         #Topics for sending data 
         self.topic_video = "videoInput"
@@ -63,9 +55,12 @@ class Server:
         while True:
             #Read status and video input from camera
             active, videoInput = self.camera.read()
+            self.socket_pub_video.send_pyobj(videoInput)
+
 
             #Read audio data from microphone
             audioInput = self.stream.read(self.chunk)
+            self.socket_pub_audio.send_pyobj(audioInput)
 
 
             #Display camera input with opencv
@@ -79,11 +74,9 @@ class Server:
             #Name of Topic is the first bytes of the message
             #zmq.SNDMORE signals that more data will come (and not only the name of the topic)
             #self.socket_pub_video.send_string(self.topic_video, zmq.SNDMORE)
-            self.socket_pub_video.send_pyobj(videoInput)
             #print(f"Sent frame {i}")
 
             #self.socket_pub_audio.send_string(self.topic_audio, zmq.SNDMORE)
-            self.socket_pub_audio.send_pyobj(audioInput)
             #print(f"Sent audio data {i}")
             #print(audioInput)
 
