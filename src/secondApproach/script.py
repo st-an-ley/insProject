@@ -15,8 +15,8 @@ def main():
 
     #Create the Objects which will send and receive data
     server= SERVER.Server()
-    client_video = CLIENT.checkVideoFeedCheating_client()
-    client_audio = CLIENT.checkAudioFeedCheating_client()
+    client_video = CLIENT.checkVideoFeedCheating_client("videoAnalysis", "6000","6001")
+    client_audio = CLIENT.checkAudioFeedCheating_client("audioAnalysis", "7000", "7001")
 
 
     #Use package multiprocessing to run the run-method of each object in a different process
@@ -33,12 +33,13 @@ def main():
     client_audio_process.start()
 
 
-    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py", "5555", "5556"], stdout = sys.stdout, stderr = sys.stderr)
+    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py", "6001", "7001"], stdout = sys.stdout, stderr = sys.stderr)
     print("main process id", os.getpid())
     print("Server Process id", server_process.pid)
-    print("Server Process id", server_process.pid)
-    print("Server Process id", server_process.pid)
-    
+    print("Client Video Process id", client_video_process.pid)
+    print("Client Audio Process id", client_audio.pid)
+    print("Streamlit process id", subprocess.check_output(["pidof","streamlit"]))
+
     streamlit.wait()
 if __name__ == "__main__":
     main()

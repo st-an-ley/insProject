@@ -20,13 +20,13 @@ class Server:
 
         #PUBLISHER socket for sending video feed
         self.socket_pub_video = self.context.socket(zmq.PUB)
-        self.socket_pub_video.bind("tcp://*:5555")
+        self.socket_pub_video.bind("tcp://*:5001")
         self.camera = cv2.VideoCapture(0)
 
 
         #PUBLISHER socket for sending audio feed
         self.socket_pub_audio = self.context.socket(zmq.PUB)
-        self.socket_pub_audio.bind("tcp://*:5556")
+        self.socket_pub_audio.bind("tcp://*:5002")
         self.audio = pyaudio.PyAudio()
 
         stream = self.audio.open(format=self.sample_format,
