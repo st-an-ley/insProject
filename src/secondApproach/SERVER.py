@@ -13,10 +13,13 @@ class Server:
 
     def run(self):
         #Settings for handling with pyAudio
-        self.chunk = 2048  # Record in chunks of 1024 samples
-        self.sample_format = pyaudio.paInt32  # 16 bits per sample
-        self.channels = 2
-        self.fs = 44100  # Record at 44100 samples per second
+        self.chunk = 512  # 512 samples sent per package, smaller latency but higher cpu usage
+        self.sample_format = pyaudio.paInt16  # 16 bits per sample
+        self.channels = 1 #1=mono, 2=stereo (left and right ear)
+        self.fs = 16000  # Record at 16000 samples per second
+        self.input_device_index=None
+        self.output_device_index=None
+
         self.seconds = 3
         self.filename = "output.wav"
 
@@ -26,11 +29,16 @@ class Server:
         #Source for audio Input
         self.audio = pyaudio.PyAudio()
 
-        self.stream = self.audio.open(format=self.sample_format,
+        self.stream = self.audio.open(
+                        format=self.sample_format,
                         channels=self.channels,
                         rate=self.fs,
                         frames_per_buffer=self.chunk,
-                        input=True)
+                        input_device_index=self.input_device_index,
+                        output_device_index=self.output_device_index,
+                        input=True,
+                        start=True
+                        )
 
         #Topics for sending data 
         self.topic_video = "videoInput"

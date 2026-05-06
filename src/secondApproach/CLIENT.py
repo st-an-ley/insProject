@@ -21,7 +21,7 @@ class Client(ABC):
         self.ID = Client.ID
 
         #Port that the client sends its outpot from 
-        self.PUBport = 6000 + self.ID*1000 + 1 #6002, 7002, 8002, etc. 
+        self.PUBport = 10000 + self.ID*1000 + 1 #6002, 7002, 8002, etc. 
         print(f"Created Client for {self.useCase} with ID {self.ID}")
         Client.ID = Client.ID+1
 
