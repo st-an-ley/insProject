@@ -8,6 +8,11 @@ import wave
 class Server:
     def __init__(self):
 
+
+        print("Created Server")
+
+    def run(self):
+        #Settings for handling with pyAudio
         self.chunk = 2048  # Record in chunks of 1024 samples
         self.sample_format = pyaudio.paInt32  # 16 bits per sample
         self.channels = 2
@@ -15,31 +20,33 @@ class Server:
         self.seconds = 3
         self.filename = "output.wav"
 
+        #Source for camera Input
+        self.camera = cv2.VideoCapture(0)
+
+        #Source for audio Input
+        self.audio = pyaudio.PyAudio()
+
+        self.stream = self.audio.open(format=self.sample_format,
+                        channels=self.channels,
+                        rate=self.fs,
+                        frames_per_buffer=self.chunk,
+                        input=True)
+
+        #Topics for sending data 
+        self.topic_video = "videoInput"
+        self.topic_audio = "audioInput"
 
         self.context = zmq.Context()
 
         #PUBLISHER socket for sending video feed
         self.socket_pub_video = self.context.socket(zmq.PUB)
         self.socket_pub_video.bind("tcp://*:5001")
-        self.camera = cv2.VideoCapture(0)
-
 
         #PUBLISHER socket for sending audio feed
         self.socket_pub_audio = self.context.socket(zmq.PUB)
         self.socket_pub_audio.bind("tcp://*:5002")
-        self.audio = pyaudio.PyAudio()
-
-        stream = self.audio.open(format=self.sample_format,
-                        channels=self.channels,
-                        rate=self.fs,
-                        frames_per_buffer=self.chunk,
-                        input=True)
 
 
-        topic_video = "videoInput"
-        topic_audio = "audioInput"
-
-    def run(self):
         i = 0
         while True:
             #Read status and data from camera
@@ -59,12 +66,12 @@ class Server:
             #zmq.SNDMORE signals that more data will come (and not only the name of the topic)
             self.socket_pub_video.send_string(self.topic_video, zmq.SNDMORE)
             self.socket_pub_video.send_pyobj(frameData)
-            print(f"Sent frame {i}")
+            #print(f"Sent frame {i}")
 
             self.socket_pub_audio.send_string(self.topic_audio, zmq.SNDMORE)
             self.socket_pub_audio.send_pyobj(audioInput)
-            print(f"Sent audio data {i}")
-            print(audioInput)
+            #print(f"Sent audio data {i}")
+            #print(audioInput)
 
             i=i+1
 

@@ -5,6 +5,7 @@ import sys
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
 def start_streamlit():
+    #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
     videoPort = sys.argv[1]
     audioPort = sys.argv[2]
 
