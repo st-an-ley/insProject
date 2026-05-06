@@ -12,24 +12,24 @@ class Client:
         self.SUBport = SUBport
         self.PUBport = PUBport
         self.ID = ID
-        print(f"Client for {self.useCase} with ID {self.ID} was created")
+        print(f"Created Client for {self.useCase} with ID {self.ID}")
         ID = ID+1
 
 
-        context = zmq.Context()
+        self.context = zmq.Context()
         
         #Create SUBSCRIBER socket to receive data from the Server
-        socket_sub = context.socket(zmq.SUB)   
-        socket_sub.connect(f"{self.protocol}://localhost:{self.SUBport}")
-        socket_sub.setsockopt(zmq.SUBSCRIBE, f"{self.useCase}.encode()") # encode() turns data into it's binary form
+        self.socket_sub = self.context.socket(zmq.SUB)   
+        self.socket_sub.connect(f"{self.protocol}://localhost:{self.SUBport}")
+        self.socket_sub.setsockopt(zmq.SUBSCRIBE, f"{self.useCase}.encode()") # encode() turns data into it's binary form
     
-        socket_sub = context.socket(zmq.PUB)   
-        socket_sub.bind(f"{self.protocol}://*:{self.PUBport}")
+        self.socket_sub = self.context.socket(zmq.PUB)   
+        self.socket_sub.bind(f"{self.protocol}://*:{self.PUBport}")
 
-
+    def run(self):
         while True:
-            topic = socket_sub.recv_string()
-            data = socket_sub.recv_pyobj()
+            topic = self.socket_sub.recv_string()
+            data = self.socket_sub.recv_pyobj()
 
 
 
