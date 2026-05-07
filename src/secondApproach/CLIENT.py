@@ -24,6 +24,12 @@ class Client(ABC):
         self.PUBport = 10000 + self.ID*1000 + 1 #10001, 11001, 12001, etc.
         print(f"Created Client for {self.useCase} with ID {self.ID}")
         Client.ID = Client.ID+1
+    
+    @abstractmethod
+    def run(self):
+        pass
+
+
 
  ############################################################################################################
 
