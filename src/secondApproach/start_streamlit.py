@@ -1,6 +1,7 @@
 import streamlit as st
 import zmq
 import sys
+import numpy as np
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
@@ -24,7 +25,7 @@ def start_streamlit():
     st.title("Remote exam surveillance")
     placeholder_video = st.empty()
     placeholder_audio = st.empty()
-
+    oldAudioInput = np.zeros(100)
     while True:
         #topic = socket_video_sub.recv_string()
         videoData = socket_video_sub.recv_pyobj()
@@ -32,7 +33,14 @@ def start_streamlit():
 
         print(videoData)
         placeholder_video.image(videoData, channels="BGR")
-        
+
+        audioNpArray = np.frombuffer(audioData, dtype=np.int16).astype(np.float32)
+
+        audioMeanAbs = float(np.mean(np.abs(audioNpArray)))
+        oldAudioInput = np.roll(oldAudioInput, -1)
+        oldAudioInput[-1] = audioMeanAbs
+        placeholder_audio.line_chart(oldAudioInput)
+
         #TODO find a way to display audio
 
 def main():
