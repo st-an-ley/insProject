@@ -3,6 +3,7 @@ import zmq
 import cv2
 import pyaudio
 import wave
+import time
 
 # Server which captures the data and sends it to clients who request it
 class Server:
@@ -17,8 +18,14 @@ class Server:
         self.sample_format = pyaudio.paInt32  # 16 bits per sample
         self.channels = 2
         self.fs = 44100  # Record at 44100 samples per second
-        self.seconds = 3
-        self.filename = "output.wav"
+
+        #Settings for controlling the amount of input
+        self.audioInputRate = 10 # Number of audio inputs per second
+        self.videoInputRate = 10 # Number of video inputs per second
+
+        #Settings for controlling the amount of output
+        self.audioOutputRate = 10 # Number of audio outputs per second
+        self.videoOutputRate = 10 # Number of video outputs per second
 
         #Source for camera Input
         self.camera = cv2.VideoCapture(0)
@@ -50,17 +57,29 @@ class Server:
         self.socket_pub_audio = self.context.socket(zmq.PUB)
         self.socket_pub_audio.bind("tcp://*:5002")
 
-
+        #Counter to check number of send data
         i = 0
+
+        #Variable to store when the last execution happened 
+        lastTime = time.time()
         while True:
-            #Read status and video input from camera
-            active, videoInput = self.camera.read()
-            self.socket_pub_video.send_pyobj(videoInput)
+
+            #Passed time since last execution 
+            passedTime = time.time() - lastTime
+
+            if passedTime > 1/self.videoInputRate:
+                #Read status and video input from camera
+                active, videoInput = self.camera.read()
+                self.socket_pub_video.send_pyobj(videoInput)
+                lastTime=time.time()
 
 
-            #Read audio data from microphone
-            audioInput = self.stream.read(self.chunk)
-            self.socket_pub_audio.send_pyobj(audioInput)
+            if passedTime > 1/self.audioInputRate:
+                #Read audio data from microphone
+                audioInput = self.stream.read(self.chunk)
+                self.socket_pub_audio.send_pyobj(audioInput)
+                lastTime=time.time()
+
 
 
             #Display camera input with opencv
