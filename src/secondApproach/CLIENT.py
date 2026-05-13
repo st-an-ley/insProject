@@ -2,6 +2,15 @@ import zmq
 import streamlit as st
 from abc import ABC, abstractmethod
 
+#For YOLOv8
+import ultralytics
+import supervision
+import torch
+import cv2
+from collections import defaultdict
+import supervision as sv
+from ultralytics import YOLO
+
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
     ID = 0 #Number of created Clients
