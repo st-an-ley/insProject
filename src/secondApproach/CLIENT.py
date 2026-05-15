@@ -1,6 +1,7 @@
 import zmq
 import streamlit as st
 from abc import ABC, abstractmethod
+import time
 
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
@@ -40,7 +41,10 @@ class Client(ABC):
 class videoProcessing_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-    
+
+        self.videoSendRate = 30 #Amount of frames sent per second 
+
+
     #run method for this client only uses data from port 5001, so only video, no audio
     #Every client processing video will need to receive data from port 5001
     def run(self):
@@ -59,13 +63,16 @@ class videoProcessing_client(Client):
         self.socket_pub = self.context.socket(zmq.PUB)  
         self.socket_pub.bind(f"{self.protocol}://*:{self.PUBport}")
 
+        lastTimeVideo = time.time()
         while True:
-            #topicInput = self.socket_video_sub.recv_string()
+            # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
             dataInput = self.socket_video_sub.recv_pyobj()
             #TODO change dataInput to the processed data
             dataOutput = self.processVideo(dataInput)
-            #TODO change dataInput to dataOutput; Right now because of test reasons
-            self.socket_pub.send_pyobj(dataInput)
+
+            if time.time() - lastTimeVideo > 1/self.videoSendRate:
+                #TODO change dataInput to dataOutput; Right now because of test reasons
+                self.socket_pub.send_pyobj(dataInput)
         
     #Method to process a video input in any kind of way
     @abstractmethod
@@ -79,6 +86,8 @@ class audioProcessing_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
 
+        self.audioSendRate = 10 #Amount of data samples sent per second
+
     #run method for this client only uses data from port 5002, so only audio, no video
     #Every client processing audio will need to receive data from port 5002
     def run(self):
@@ -91,19 +100,23 @@ class audioProcessing_client(Client):
         self.socket_audio_sub = self.context.socket(zmq.SUB)   
         #TODO Look if topic name must be specified since different ports are used
         self.socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
-        #f"{self.useCase}.encode('utf-8')"
         self.socket_audio_sub.connect(f"{self.protocol}://localhost:{self.audioSUBport}")
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_pub = self.context.socket(zmq.PUB)  
         self.socket_pub.bind(f"{self.protocol}://*:{self.PUBport}")
 
+        lastTimeAudio = time.time()
         while True:
-            #topicInput = self.socket_audio_sub.recv_string()
+            # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
             dataInput = self.socket_audio_sub.recv_pyobj()
             dataOutput = self.processAudio(dataInput)
-            #TODO change dataInput to dataOuput; right now for test reasons
-            self.socket_pub.send_pyobj(dataInput)
+            if time.time() - lastTimeAudio > 1/self.audioSendRate:
+                #topicInput = self.socket_audio_sub.recv_string()
+
+                #TODO change dataInput to dataOuput; right now for test reasons
+                self.socket_pub.send_pyobj(dataInput)
+                lastTimeAudio = time.time()
         
     @abstractmethod
     def processAudio(self, audioInput):
