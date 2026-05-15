@@ -73,6 +73,7 @@ class videoProcessing_client(Client):
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
                 #TODO change dataInput to dataOutput; Right now because of test reasons
                 self.socket_pub.send_pyobj(dataInput)
+                lastTimeVideo = time.time()
         
     #Method to process a video input in any kind of way
     @abstractmethod

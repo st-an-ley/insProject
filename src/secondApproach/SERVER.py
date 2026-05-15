@@ -74,7 +74,14 @@ class Server:
             if passedTimeVideo > 1/self.videoInputRate:
                 #Read status and video input from camera
                 active, videoInput = self.camera.read()
-                self.socket_pub_video.send_pyobj(videoInput)
+
+                #Convert image into a numpy array with the jpg as bytes
+                success, imageNumpyJpgBytes = cv2.imencode('.jpg', videoInput, [cv2.IMWRITE_JPEG_QUALITY, 50])
+                
+                #send() expects a python-bytes object. So numpyArray -> PythonBytesObject
+                self.socket_pub_video.send(imageNumpyJpgBytes.tobytes())  
+
+                #self.socket_pub_video.send_pyobj(videoInput)
                 lastTimeVideo=time.time()
 
 
