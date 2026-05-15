@@ -20,12 +20,13 @@ class Server:
         self.fs = 44100  # Record at 44100 samples per second
 
         #Settings for controlling the amount of input
+        self.videoInputRate = 30 # Number of video inputs per second
         self.audioInputRate = 10 # Number of audio inputs per second
-        self.videoInputRate = 10 # Number of video inputs per second
+
 
         #Settings for controlling the amount of output
-        self.audioOutputRate = 10 # Number of audio outputs per second
         self.videoOutputRate = 10 # Number of video outputs per second
+        self.audioOutputRate = 10 # Number of audio outputs per second
 
         #Source for camera Input
         self.camera = cv2.VideoCapture(0)
@@ -61,24 +62,27 @@ class Server:
         i = 0
 
         #Variable to store when the last execution happened 
-        lastTime = time.time()
+        lastTimeVideo = time.time()
+        lastTimeAudio = time.time()
+
         while True:
 
             #Passed time since last execution 
-            passedTime = time.time() - lastTime
+            passedTimeVideo = time.time() - lastTimeVideo
+            passedTimeAudio = time.time() - lastTimeAudio
 
-            if passedTime > 1/self.videoInputRate:
+            if passedTimeVideo > 1/self.videoInputRate:
                 #Read status and video input from camera
                 active, videoInput = self.camera.read()
                 self.socket_pub_video.send_pyobj(videoInput)
-                lastTime=time.time()
+                lastTimeVideo=time.time()
 
 
-            if passedTime > 1/self.audioInputRate:
+            if passedTimeAudio > 1/self.audioInputRate:
                 #Read audio data from microphone
                 audioInput = self.stream.read(self.chunk)
                 self.socket_pub_audio.send_pyobj(audioInput)
-                lastTime=time.time()
+                lastTimeAudio=time.time()
 
 
 

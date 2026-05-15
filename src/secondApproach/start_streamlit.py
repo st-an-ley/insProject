@@ -41,7 +41,7 @@ def start_streamlit():
         oldAudioInput[-1] = audioMeanAbs
         placeholder_audio.line_chart(oldAudioInput)
 
-        #TODO find a way to display audio
+        #TODO find a better way to display audio
 
 def main():
     start_streamlit()
