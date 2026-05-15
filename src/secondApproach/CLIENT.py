@@ -62,29 +62,37 @@ class videoProcessing_client(Client):
         self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}")
 
         #Create PUBLISHER socket to send data to Streamlit
-        self.socket_pub = self.context.socket(zmq.PUB)  
-        self.socket_pub.bind(f"{self.protocol}://*:{self.PUBport}")
+        self.socket_video_pub = self.context.socket(zmq.PUB)  
+        self.socket_video_pub.bind(f"{self.protocol}://*:{self.PUBport}")
 
         lastTimeVideo = time.time()
         while True:
             # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
             #dataInput = self.socket_video_sub.recv_pyobj()
 
-            #Receive data as bytes
-            dataInputBytes = self.socket_video_sub.recv()
+            #Receive data as raw bytes
+            videoDataInputBytes = self.socket_video_sub.recv()
 
-            #Turn data into numpy array as image with color to be able to work with the data
-            dataInput = cv2.imdecode(np.frombuffer(dataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+            #Turn bytes into numpy array as image with color to be able to work with the data
+            videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
 
             #Use numpy array and process the data
-            dataOutput = self.processVideo(dataInput)
+            videoDataOutputNumpyArray = self.processVideo(videoDataInputNumpyArray)
+
+            #Convert numpy array back to raw bytes 
+
+            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoDataOutputNumpyArray, [cv2.IMWRITE_JPEG_QUALITY, 50])
+            
+            #Converts bytes numpyArray to the raw bytes 
+            imageRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
 
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
                 #TODO change dataInput to dataOutput; Right now because of test reasons
                 #self.socket_pub.send_pyobj(dataInput)
 
                 #Convert numpy array back to bytes to send the data
-                self.socket_pub_video.send(dataInput.tobytes())  
+                self.socket_video_pub.send(imageRawBytes)
+
                 lastTimeVideo = time.time()
         
     #Method to process a video input in any kind of way
@@ -149,6 +157,9 @@ class checkVideoFeedCheating_client(videoProcessing_client):
     #Overrites the methods from the parent class; Will be automatically called when executed on child class
     def processVideo(self, videoInput):
         print("Running processVideo() from checkVideoFeedCheating_client")
+        #TODO change dataOutput to correct data
+        dataOutput = videoInput
+        return dataOutput
         #TODO Implement methods to check for cheating in video
 
 ############################################################################################################
@@ -169,3 +180,4 @@ class checkAudioFeedCheating_client(audioProcessing_client):
 ############################################################################################################
 
 #TODO add further client types
+

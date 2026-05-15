@@ -2,6 +2,7 @@ import streamlit as st
 import zmq
 import sys
 import numpy as np
+import cv2
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
@@ -28,11 +29,15 @@ def start_streamlit():
     oldAudioInput = np.zeros(100)
     while True:
         #topic = socket_video_sub.recv_string()
-        videoData = socket_video_sub.recv_pyobj()
+
+        videoDataInputBytes = socket_video_sub.recv()
+        videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+
+        #videoData = socket_video_sub.recv_pyobj()
         audioData = socket_audio_sub.recv_pyobj()
 
-        print(videoData)
-        placeholder_video.image(videoData, channels="BGR")
+        #print(videoData)
+        placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
 
         audioNpArray = np.frombuffer(audioData, dtype=np.int16).astype(np.float32)
 

@@ -14,10 +14,10 @@ class Server:
 
     def run(self):
         #Settings for handling with pyAudio
-        self.chunk = 2048  # Record in chunks of 1024 samples
-        self.sample_format = pyaudio.paInt32  # 16 bits per sample
-        self.channels = 2
-        self.fs = 44100  # Record at 44100 samples per second
+        self.chunk = 1024  # Record in chunks of 1024 samples
+        self.sample_format = pyaudio.paInt16  # 16 bits per sample
+        self.channels = 1
+        self.fs = 20000  # Record at 20000 samples per second
 
         #Settings for controlling the amount of input
         self.videoInputRate = 30 # Number of video inputs per second
@@ -72,14 +72,15 @@ class Server:
             passedTimeAudio = time.time() - lastTimeAudio
 
             if passedTimeVideo > 1/self.videoInputRate:
-                #Read status and video input from camera
+                #Read status and video input from camera, video as numpy array
                 active, videoInput = self.camera.read()
 
                 #imencode converts image numpyArray to bytes numpyArray, containing all the bytes as a list 
                 success, imageNumpyJpgBytes = cv2.imencode('.jpg', videoInput, [cv2.IMWRITE_JPEG_QUALITY, 50])
                 
                 #Converts bytes numpyArray to the raw bytes 
-                self.socket_pub_video.send(imageNumpyJpgBytes.tobytes())  
+                imageRawBytes = imageNumpyJpgBytes.tobytes()
+                self.socket_pub_video.send(imageRawBytes)  
 
                 #self.socket_pub_video.send_pyobj(videoInput)
                 lastTimeVideo=time.time()
