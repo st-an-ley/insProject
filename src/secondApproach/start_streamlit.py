@@ -13,8 +13,11 @@ def start_streamlit():
 
     context = zmq.Context()
 
+
+
     #SUBSCRIBER socket for video with corresponding port
     socket_video_sub = context.socket(zmq.SUB)
+    socket_video_sub.setsockopt(zmq.RCVHWM, 1)        
     socket_video_sub.connect(f"tcp://localhost:{videoInputPort}")
     socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
@@ -23,28 +26,34 @@ def start_streamlit():
     socket_audio_sub.connect(f"tcp://localhost:{audioInputPort}")
     socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
+    poller = zmq.Poller()
+    poller.register(socket_video_sub, zmq.POLLIN)
+    poller.register(socket_audio_sub, zmq.POLLIN)
+
     st.title("Remote exam surveillance")
     placeholder_video = st.empty()
     placeholder_audio = st.empty()
     oldAudioInput = np.zeros(100)
     while True:
         #topic = socket_video_sub.recv_string()
+        pollerSockets = dict(poller.poll(timeout=16))
+        if socket_video_sub in pollerSockets:
+            videoDataInputBytes = socket_video_sub.recv()
+            videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+            placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
 
-        videoDataInputBytes = socket_video_sub.recv()
-        videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+        if socket_audio_sub in pollerSockets:
+            #videoData = socket_video_sub.recv_pyobj()
+            audioData = socket_audio_sub.recv_pyobj()
 
-        #videoData = socket_video_sub.recv_pyobj()
-        audioData = socket_audio_sub.recv_pyobj()
+            #print(videoData)
 
-        #print(videoData)
-        placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
+            audioNpArray = np.frombuffer(audioData, dtype=np.int16).astype(np.float32)
 
-        audioNpArray = np.frombuffer(audioData, dtype=np.int16).astype(np.float32)
-
-        audioMeanAbs = float(np.mean(np.abs(audioNpArray)))
-        oldAudioInput = np.roll(oldAudioInput, -1)
-        oldAudioInput[-1] = audioMeanAbs
-        placeholder_audio.line_chart(oldAudioInput)
+            audioMeanAbs = float(np.mean(np.abs(audioNpArray)))
+            oldAudioInput = np.roll(oldAudioInput, -1)
+            oldAudioInput[-1] = audioMeanAbs
+            placeholder_audio.line_chart(oldAudioInput)
 
         #TODO find a better way to display audio
 
