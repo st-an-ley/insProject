@@ -2,6 +2,8 @@ import zmq
 import streamlit as st
 from abc import ABC, abstractmethod
 import time
+import cv2
+import numpy as np 
 
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
@@ -66,13 +68,23 @@ class videoProcessing_client(Client):
         lastTimeVideo = time.time()
         while True:
             # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
-            dataInput = self.socket_video_sub.recv_pyobj()
-            #TODO change dataInput to the processed data
+            #dataInput = self.socket_video_sub.recv_pyobj()
+
+            #Receive data as bytes
+            dataInputBytes = self.socket_video_sub.recv()
+
+            #Turn data into numpy array as image with color to be able to work with the data
+            dataInput = cv2.imdecode(np.frombuffer(dataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+
+            #Use numpy array and process the data
             dataOutput = self.processVideo(dataInput)
 
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
                 #TODO change dataInput to dataOutput; Right now because of test reasons
-                self.socket_pub.send_pyobj(dataInput)
+                #self.socket_pub.send_pyobj(dataInput)
+
+                #Convert numpy array back to bytes to send the data
+                self.socket_pub_video.send(dataInput.tobytes())  
                 lastTimeVideo = time.time()
         
     #Method to process a video input in any kind of way

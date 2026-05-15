@@ -75,10 +75,10 @@ class Server:
                 #Read status and video input from camera
                 active, videoInput = self.camera.read()
 
-                #Convert image into a numpy array with the jpg as bytes
+                #imencode converts image numpyArray to bytes numpyArray, containing all the bytes as a list 
                 success, imageNumpyJpgBytes = cv2.imencode('.jpg', videoInput, [cv2.IMWRITE_JPEG_QUALITY, 50])
                 
-                #send() expects a python-bytes object. So numpyArray -> PythonBytesObject
+                #Converts bytes numpyArray to the raw bytes 
                 self.socket_pub_video.send(imageNumpyJpgBytes.tobytes())  
 
                 #self.socket_pub_video.send_pyobj(videoInput)
