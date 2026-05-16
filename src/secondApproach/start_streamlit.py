@@ -36,9 +36,11 @@ def start_streamlit():
     st.title("Remote exam surveillance")
     placeholder_video = st.empty()
     placeholder_audio = st.empty()
+    placeholder_cheatedStatus = st.empty()
     oldAudioInput = np.zeros(100)
 
     lastTime = time.time()
+    activated = False
     while True:
         #topic = socket_video_sub.recv_string()
         pollerSockets = dict(poller.poll(timeout=16))
@@ -70,7 +72,20 @@ def start_streamlit():
             audioDataBytes = socket_audio_sub.recv()
             audioDatadB, audioCheated= struct.unpack('f?', audioDataBytes)
             
+            
             print("Cheated:" , audioCheated)
+            if audioCheated == True:
+                activated = True
+            
+            if activated == False:
+                placeholder_cheatedStatus.success("No cheating detected")
+            elif activated == True:
+                placeholder_cheatedStatus.warning("Cheating detected, supervisor was informed")
+
+            # if false, look again
+            # if true, stay true
+
+
             oldAudioInput = np.roll(oldAudioInput, -1)
             oldAudioInput[-1] = audioDatadB
             placeholder_audio.bar_chart(oldAudioInput)
