@@ -68,8 +68,9 @@ def start_streamlit():
             #Every value is represented as 16 bits = 2 Bytes
             #16 bits : 65536 values from -32768 to +32767 
             audioDataBytes = socket_audio_sub.recv()
-            audioDatadB = struct.unpack('f', audioDataBytes)[0]
-
+            audioDatadB, audioCheated= struct.unpack('f?', audioDataBytes)
+            
+            print("Cheated:" , audioCheated)
             oldAudioInput = np.roll(oldAudioInput, -1)
             oldAudioInput[-1] = audioDatadB
             placeholder_audio.bar_chart(oldAudioInput)

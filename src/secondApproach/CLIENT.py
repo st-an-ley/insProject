@@ -5,6 +5,7 @@ import time
 import cv2
 import numpy as np 
 import struct
+import whisper 
 
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
@@ -164,14 +165,16 @@ class audioProcessing_client(Client):
             #PROCESS DATA 
             #-----------------------------------------------
             #Process data (bytes because of audio)
-            dataOutputIndB = self.processAudio(audioDataInputBytes)
+            processedData = self.processAudio(audioDataInputBytes)
+            dataOutputIndB = processedData[0] # stores the dB value
+            dataOutputCheated = processedData[1] # stores if cheating was detected
             #-----------------------------------------------
 
 
             #DATA TO BYTES
             #-----------------------------------------------
             # Converts float to bytes 
-            dataOutputBytes = bytearray(struct.pack("f", dataOutputIndB))
+            dataOutputBytes = bytearray(struct.pack("f?", dataOutputIndB, dataOutputCheated))
             #-----------------------------------------------
 
 
@@ -215,7 +218,13 @@ class checkVideoFeedCheating_client(videoProcessing_client):
 class checkAudioFeedCheating_client(audioProcessing_client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         audioProcessing_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-    
+
+        #Using OpenAIs Neural Network whisper to extract words from recorded samples
+        #Loading model; Chosing "base" because it is small enough to run without GPU
+        self.whisper_model = whisper.load_model("base")
+        #Time in seconds in which whisper can search for words
+        self.secondsForWhisper = 5
+
     def run(self):
         audioProcessing_client.run(self)
     
@@ -240,7 +249,19 @@ class checkAudioFeedCheating_client(audioProcessing_client):
         audioNpArrayMeanAbsNormalized = max(audioNpArrayMeanAbsNormalized, 1e-10)  
         audioIndB = 20 * np.log10(audioNpArrayMeanAbsNormalized / referenceValueForLog)
 
-        return audioIndB
+        cheated = False
+        dBThreshold = 50
+
+        #Check for cheating by using a simple threshold
+        #TODO Change method from threshold to actual detection of talking
+        if audioIndB > dBThreshold:
+            cheated = True
+
+            #TODO Find a way of how to store the audio input 
+
+        listDataCheated = [audioIndB,cheated]
+
+        return listDataCheated
 
 
 ############################################################################################################
