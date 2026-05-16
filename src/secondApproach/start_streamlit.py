@@ -69,27 +69,40 @@ def start_streamlit():
             #Audio data is of type int16 and represents the position of the membran of the microphone
             #Every value is represented as 16 bits = 2 Bytes
             #16 bits : 65536 values from -32768 to +32767 
+
+
+            #READ DATA AND SEPARATE IT INTO AUDIO AND CHEATING DATA
+            #-------------------------------------------------
             audioDataBytes = socket_audio_sub.recv()
             audioDatadB, audioCheated= struct.unpack('f?', audioDataBytes)
-            
-            
-            print("Cheated:" , audioCheated)
-            if audioCheated == True:
+            #-------------------------------------------------
+
+
+            # CHECK ALL POSSIBLE REASONS WHICH CAN ACTIVATE THE CHEATING
+            #-------------------------------------------------
+            #CHECKING FOR BREACH OF THRESHOLD 
+            if audioCheated == True: #TODO Add further reasons
                 activated = True
-            
+            #-------------------------------------------------
+
+
+            # UPDATE THE BAR-CHART BY SHIFTING EVERY VALUE BY ONE TO THE LEFT AND 
+            # UPDATING THE LAST VALUE IN THE NUMPY ARRAY 
+            #-------------------------------------------------
+            oldAudioInput = np.roll(oldAudioInput, -1)
+            oldAudioInput[-1] = audioDatadB
+            placeholder_audio.bar_chart(oldAudioInput)
+            #-------------------------------------------------
+
+
+            #SEE FINAL RESULT OF ALL FORMER CHECKS AND UPDATE PLACEHOLDER ELEMENT
+            #-------------------------------------------------
             if activated == False:
                 placeholder_cheatedStatus.success("No cheating detected")
             elif activated == True:
                 placeholder_cheatedStatus.warning("Cheating detected, supervisor was informed")
-
-            # if false, look again
-            # if true, stay true
-
-
-            oldAudioInput = np.roll(oldAudioInput, -1)
-            oldAudioInput[-1] = audioDatadB
-            placeholder_audio.bar_chart(oldAudioInput)
-            pass
+            #-------------------------------------------------
+            
         
 
 def main():

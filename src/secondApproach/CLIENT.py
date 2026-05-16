@@ -225,6 +225,10 @@ class checkAudioFeedCheating_client(audioProcessing_client):
         #Time in seconds in which whisper can search for words
         self.secondsForWhisper = 5
 
+        #fs=20000 : values per second; values/second * seconds = values over all seconds
+        self.storageForWhisper = np.empty(20000*self.secondsForWhisper)
+        
+
     def run(self):
         audioProcessing_client.run(self)
     
