@@ -84,15 +84,16 @@ class videoCheck_client(Client):
 
             #PROCESS DATA 
             #-----------------------------------------------
-            #Use numpy array and process the data
-            videoDataOutputNumpyArray = self.processVideo(videoDataInputNumpyArray)
+            #Image will be processed in any kind of way
+            #[0] will store if cheating was detected, [1] will store the actual proof as image as numpyArray
+            processVideoOutput = self.processVideo(videoDataInputNumpyArray)
             #-----------------------------------------------
 
 
             #DATA TO BYTES
             #-----------------------------------------------
-            #Convert numpy array back to raw bytes 
-            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoDataOutputNumpyArray, [cv2.IMWRITE_JPEG_QUALITY, 50])
+            #Convert image for proof from numpyArray to Bytes
+            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', processVideoOutput[1], [cv2.IMWRITE_JPEG_QUALITY, 50])
             
             #Converts bytes numpyArray to the raw bytes 
             imageDataOutputRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
