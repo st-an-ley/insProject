@@ -226,11 +226,13 @@ class checkAudioFeedCheating_client(audioProcessing_client):
         self.secondsForWhisper = 5
 
         #fs=20000 : values per second; values/second * seconds = values over all seconds
-        self.storageForWhisper = np.empty(20000*self.secondsForWhisper)
-        
+        self.storageForWhisper = np.zeros(20000*self.secondsForWhisper)
+
 
     def run(self):
         audioProcessing_client.run(self)
+        self.storageForWhisper = np.roll(self.storageForWhisper, -1)
+        self.storageForWhisper[-1] = audioDatadB
     
     #Overrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
