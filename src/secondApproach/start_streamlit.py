@@ -64,7 +64,7 @@ def start_streamlit():
 
         if socket_audio_sub in pollerSockets:
             #videoData = socket_video_sub.recv_pyobj()
-            audioData = socket_audio_sub.recv_pyobj()
+            audioData = socket_audio_sub.recv()
 
             #print(videoData)
 

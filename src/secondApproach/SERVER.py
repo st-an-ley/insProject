@@ -17,7 +17,7 @@ class Server:
         self.chunk = 1024  # Record in chunks of 1024 samples
         self.sample_format = pyaudio.paInt16  # 16 bits per sample
         self.channels = 1
-        self.fs = 50000  # Record at 20000 samples per second
+        self.fs = 20000  # Record at 20000 samples per second
 
         #Settings for controlling the amount of input
         self.videoInputRate = 30 # Number of video inputs per second
@@ -88,8 +88,9 @@ class Server:
 
             if passedTimeAudio > 1/self.audioInputRate:
                 #Read audio data from microphone
+                #Audio as raw bytes
                 audioInput = self.stream.read(self.chunk)
-                self.socket_pub_audio.send_pyobj(audioInput)
+                self.socket_pub_audio.send(audioInput)
                 lastTimeAudio=time.time()
 
 
