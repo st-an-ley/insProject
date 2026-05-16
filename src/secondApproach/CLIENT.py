@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import time
 import cv2
 import numpy as np 
+import struct
 
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
@@ -163,23 +164,23 @@ class audioProcessing_client(Client):
             #PROCESS DATA 
             #-----------------------------------------------
             #Process data (bytes because of audio)
-            dataOutput = self.processAudio(audioDataInputBytes)
+            dataOutputIndB = self.processAudio(audioDataInputBytes)
             #-----------------------------------------------
 
 
             #DATA TO BYTES
             #-----------------------------------------------
-            # TODO Convert dB back to Bytes
+            # Converts float to bytes 
+            dataOutputBytes = bytearray(struct.pack("f", dataOutputIndB))
             #-----------------------------------------------
 
 
             if time.time() - lastTimeAudio > 1/self.audioSendRate:
-                #TODO change dataInput to dataOuput; right now for test reasons
-                
-                
+
+
                 #SEND BYTES
                 #-----------------------------------------------
-                self.socket_pub.send(audioDataInputBytes)
+                self.socket_pub.send(dataOutputBytes)
                 #-----------------------------------------------
 
 
@@ -224,11 +225,23 @@ class checkAudioFeedCheating_client(audioProcessing_client):
         #The input is the size of parameter CHUNK in Server, here 1024
 
         #Turn Bytes into NumpyArray with data of type float32
+        #Every float represents the position of the membran at the specific time
+        #Float only because np.mean and np.abs only work with float
         audioNpArray = np.frombuffer(audioInput, dtype=np.int16).astype(np.float32)
-        audioNpArrayMeanAbs = float(np.mean(np.abs(audioNpArray)))
+        audioNpArrayMeanAbs = np.mean(np.abs(audioNpArray))
 
+        #Normalize to range from -1 to 1, to get same value for every data format (Int16 less values than Int32 but same range)
+        audioNpArrayMeanAbsNormalized = audioNpArrayMeanAbs / 32768
 
-        pass
+        #smallest reference possible with 16 bits, positive because np.abs() was applied before
+        referenceValueForLog = 1.0 / 32768.0 
+
+        #To avoid log(0)
+        audioNpArrayMeanAbsNormalized = max(audioNpArrayMeanAbsNormalized, 1e-10)  
+        audioIndB = 20 * np.log10(audioNpArrayMeanAbsNormalized / referenceValueForLog)
+
+        return audioIndB
+
 
 ############################################################################################################
 

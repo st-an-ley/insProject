@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import time
 import base64
+import struct
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
@@ -66,19 +67,11 @@ def start_streamlit():
             #Audio data is of type int16 and represents the position of the membran of the microphone
             #Every value is represented as 16 bits = 2 Bytes
             #16 bits : 65536 values from -32768 to +32767 
-            audioData = socket_audio_sub.recv()
+            audioDataBytes = socket_audio_sub.recv()
+            audioDatadB = struct.unpack('f', audioDataBytes)[0]
 
-            
-
-            #Turn every 16 bits into 1 integer value
-            #paInt16 : 2 Bytes = 1 Value
-            #Into float32 because np.mean and np.abs only work with float
-            audioNpArray = np.frombuffer(audioData, dtype=np.int16).astype(np.float32)
-            
-            #TODO find a better way to display audio
-            audioMeanAbs = float(np.mean(np.abs(audioNpArray)))
             oldAudioInput = np.roll(oldAudioInput, -1)
-            oldAudioInput[-1] = audioMeanAbs
+            oldAudioInput[-1] = audioDatadB
             placeholder_audio.line_chart(oldAudioInput)
             pass
         
