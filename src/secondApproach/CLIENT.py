@@ -36,13 +36,10 @@ class Client(ABC):
 
 
 
- ############################################################################################################
-
-#Define each client with its specific tasks
-
-#General client for analyzing the video input in any kind of way
+############################################################################################################
 #Subclass of Client
-class videoProcessing_client(Client):
+#General client for analyzing the video input in any kind of way
+class videoCheck_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
 
@@ -62,7 +59,7 @@ class videoProcessing_client(Client):
         self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
         #f"{self.useCase}.encode('utf-8')"
         self.socket_video_sub.setsockopt(zmq.RCVHWM, 1)        
-        self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}")
+        self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}") #5001
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_video_pub = self.context.socket(zmq.PUB)  
@@ -119,8 +116,98 @@ class videoProcessing_client(Client):
 
 ############################################################################################################
 
+#Specifif use case for processing the video input, in this case to 
+#check if the person is same as the embedding from group1
+class checkVideoDiffPerson_client(videoCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        videoCheck_client.run(self)
+
+
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processVideo(self, videoInput):
+        #TODO change dataOutput to correct data
+        dataOutput = videoInput
+        return dataOutput
+        #TODO Implement methods to check for cheating in video
+
+############################################################################################################
+
+#Specifif use case for processing the video input, in this case to check if more than one 
+#person is seen in the video feed
+class checkVideoSevPeople_client(videoCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        videoCheck_client.run(self)
+
+
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processVideo(self, videoInput):
+        #TODO change dataOutput to correct data
+        dataOutput = videoInput
+        return dataOutput
+        #TODO Implement methods to check for cheating in video
+
+############################################################################################################
+
+#Specifif use case for processing the video input, in this case for checking video input for cheating
+class checkVideoDevices_client(videoCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        videoCheck_client.run(self)
+
+
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processVideo(self, videoInput):
+        #TODO change dataOutput to correct data
+        dataOutput = videoInput
+        return dataOutput
+        #TODO Implement methods to check for cheating in video
+
+############################################################################################################
+#Specifif use case for processing the video input, in this case for checking video input for cheating
+class checkVideoCameraOff_client(videoCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        videoCheck_client.run(self)
+
+
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processVideo(self, videoInput):
+        #TODO change dataOutput to correct data
+        dataOutput = videoInput
+        return dataOutput
+        #TODO Implement methods to check for cheating in video
+
+############################################################################################################
+
+#Specifif use case for processing the video input, in this case to check if person is going without giving handsign
+class checkVideoGoWithoutHandsign_client(videoCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        videoCheck_client.run(self)
+
+
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processVideo(self, videoInput):
+        #TODO change dataOutput to correct data
+        dataOutput = videoInput
+        return dataOutput
+        #TODO Implement methods to check for cheating in video
+
+############################################################################################################
 #Abstract class for analyzing the audio input in any kind of way
-class audioProcessing_client(Client):
+class audioCheck_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
 
@@ -138,7 +225,7 @@ class audioProcessing_client(Client):
         self.socket_audio_sub = self.context.socket(zmq.SUB)   
         #TODO Look if topic name must be specified since different ports are used
         self.socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
-        self.socket_audio_sub.connect(f"{self.protocol}://localhost:{self.audioSUBport}")
+        self.socket_audio_sub.connect(f"{self.protocol}://localhost:{self.audioSUBport}") #5002
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_pub = self.context.socket(zmq.PUB)  
@@ -194,30 +281,10 @@ class audioProcessing_client(Client):
         pass
 
 ############################################################################################################
-
-#Specifif use case for processing the video input, in this case for checking video input for cheating
-class checkVideoFeedCheating_client(videoProcessing_client):
+#Specifif use case for processing the audio input, in this case to check if volume threshold in dB is breached
+class checkAudioLoud_client(audioCheck_client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoProcessing_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-
-    def run(self):
-        videoProcessing_client.run(self)
-
-
-    #Overrites the methods from the parent class; Will be automatically called when executed on child class
-    def processVideo(self, videoInput):
-        #print("Running processVideo() from checkVideoFeedCheating_client")
-        #TODO change dataOutput to correct data
-        dataOutput = videoInput
-        return dataOutput
-        #TODO Implement methods to check for cheating in video
-
-############################################################################################################
-
-#Specifif use case for processing the video input, in this case for checking video input for cheating
-class checkAudioFeedCheating_client(audioProcessing_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        audioProcessing_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
 
         #Using OpenAIs Neural Network whisper to extract words from recorded samples
         #Loading model; Chosing "base" because it is small enough to run without GPU
@@ -230,11 +297,11 @@ class checkAudioFeedCheating_client(audioProcessing_client):
 
 
     def run(self):
-        audioProcessing_client.run(self)
+        audioCheck_client.run(self)
         self.storageForWhisper = np.roll(self.storageForWhisper, -1)
         self.storageForWhisper[-1] = audioDatadB
     
-    #Overrites the methods from the parent class; Will be automatically called when executed on child class
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
         #audioInput is received as raw bytes
         #The input is the size of parameter CHUNK in Server, here 1024
@@ -269,7 +336,44 @@ class checkAudioFeedCheating_client(audioProcessing_client):
 
         return listDataCheated
 
+############################################################################################################
+#Specifif use case for processing the audio input, in this case to check if the person is whispering
+class checkAudioWhisper_client(audioCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        audioCheck_client.run(self)
+    
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processAudio(self, audioInput):
+        pass 
 
 ############################################################################################################
+#Specifif use case for processing the audio input, in this case to check if microphone is turned off/muted
+class checkAudioMicOff_client(audioCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
 
+    def run(self):
+        audioCheck_client.run(self)
+    
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processAudio(self, audioInput):
+        pass 
+
+############################################################################################################
+#Specifif use case for processing the audio input, in this case for extracting spoken words from audio sequence
+class checkAudioGetWords_client(audioCheck_client):
+    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+
+    def run(self):
+        audioCheck_client.run(self)
+    
+    #Overwrites the methods from the parent class; Will be automatically called when executed on child class
+    def processAudio(self, audioInput):
+        pass 
+
+############################################################################################################
 #TODO add further client types
