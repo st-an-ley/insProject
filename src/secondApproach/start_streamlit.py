@@ -3,6 +3,8 @@ import zmq
 import sys
 import numpy as np
 import cv2
+import time
+import base64
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
@@ -34,13 +36,31 @@ def start_streamlit():
     placeholder_video = st.empty()
     placeholder_audio = st.empty()
     oldAudioInput = np.zeros(100)
+
+    lastTime = time.time()
     while True:
         #topic = socket_video_sub.recv_string()
         pollerSockets = dict(poller.poll(timeout=16))
         if socket_video_sub in pollerSockets:
             videoDataInputBytes = socket_video_sub.recv()
-            videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
-            placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
+
+
+            #videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+            #placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
+
+            #Using base64 and markdown to avoid reloading the whole website when displaying a new image
+            #base64 can only display 64 signs: A-Z, a-z, 0-9, +, /
+            #Browsers/HTML can convert base64 back to bytes and display the image
+            b64 = base64.b64encode(videoDataInputBytes).decode()
+            placeholder_video.markdown(
+                f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
+                unsafe_allow_html=True
+            )
+
+            currentTime = time.time()
+            timePassed = currentTime-lastTime
+            print("Streamlit hat ", timePassed, "gebraucht")
+            lastTime = currentTime
 
         if socket_audio_sub in pollerSockets:
             #videoData = socket_video_sub.recv_pyobj()
@@ -54,7 +74,7 @@ def start_streamlit():
             oldAudioInput = np.roll(oldAudioInput, -1)
             oldAudioInput[-1] = audioMeanAbs
             placeholder_audio.line_chart(oldAudioInput)
-
+            pass
         #TODO find a better way to display audio
 
 def main():

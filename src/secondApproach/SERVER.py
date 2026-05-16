@@ -17,7 +17,7 @@ class Server:
         self.chunk = 1024  # Record in chunks of 1024 samples
         self.sample_format = pyaudio.paInt16  # 16 bits per sample
         self.channels = 1
-        self.fs = 20000  # Record at 20000 samples per second
+        self.fs = 50000  # Record at 20000 samples per second
 
         #Settings for controlling the amount of input
         self.videoInputRate = 30 # Number of video inputs per second
@@ -97,8 +97,8 @@ class Server:
             #Display camera input with opencv
             #cv2.imshow("CameraInput", frameData)
             #Check for keyboard input 'q' = 113 in ASCII
-            if cv2.waitKey(1) == 113:
-                break
+            #if cv2.waitKey(1) == 113:
+            #    break
 
 
             #Publishing the data over a specified topic to all the clients
