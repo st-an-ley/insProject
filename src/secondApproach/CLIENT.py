@@ -25,8 +25,6 @@ class Client(ABC):
         #Store current class ID as object ID
         self.ID = Client.ID
 
-        #Port that the client sends its outpot from 
-        self.PUBport = 10000 + self.ID*1000 + 1 #10001, 11001, 12001, etc.
         print(f"Created Client for {self.useCase} with ID {self.ID}")
         Client.ID = Client.ID+1
     
@@ -42,7 +40,7 @@ class Client(ABC):
 class videoCheck_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-
+        self.portPUB = 7001
         self.videoSendRate = 30 #Amount of frames sent per second 
 
 
@@ -85,7 +83,7 @@ class videoCheck_client(Client):
             #PROCESS DATA 
             #-----------------------------------------------
             #Image will be processed in any kind of way
-            #[0] will store if cheating was detected, [1] will store the actual proof as image as numpyArray
+            #[0] : if cheating was detected, [1]: type of cheating , [2] : the actual proof as image as numpyArray
             processVideoOutput = self.processVideo(videoDataInputNumpyArray)
             #-----------------------------------------------
 
@@ -211,7 +209,7 @@ class checkVideoGoWithoutHandsign_client(videoCheck_client):
 class audioCheck_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-
+        self.portPUB = 8001
         self.audioSendRate = 10 #Amount of data samples sent per second
 
     #run method for this client only uses data from port 5002, so only audio, no video
