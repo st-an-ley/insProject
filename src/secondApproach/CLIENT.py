@@ -40,7 +40,7 @@ class Client(ABC):
 class videoCheck_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-        self.portPUB = 7001
+        self.portPUB = 6001
         self.videoSendRate = 30 #Amount of frames sent per second 
 
 
@@ -209,7 +209,7 @@ class checkVideoGoWithoutHandsign_client(videoCheck_client):
 class audioCheck_client(Client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-        self.portPUB = 8001
+        self.portPUB = 6002
         self.audioSendRate = 10 #Amount of data samples sent per second
 
     #run method for this client only uses data from port 5002, so only audio, no video
