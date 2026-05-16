@@ -133,13 +133,16 @@ class audioProcessing_client(Client):
         lastTimeAudio = time.time()
         while True:
             # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
-            dataInput = self.socket_audio_sub.recv_pyobj()
-            dataOutput = self.processAudio(dataInput)
+            # audio is received as raw bytes
+            audioDataInput = self.socket_audio_sub.recv()
+
+            #send raw bytes to process method
+            dataOutput = self.processAudio(audioDataInput)
             if time.time() - lastTimeAudio > 1/self.audioSendRate:
                 #topicInput = self.socket_audio_sub.recv_string()
 
                 #TODO change dataInput to dataOuput; right now for test reasons
-                self.socket_pub.send_pyobj(dataInput)
+                self.socket_pub.send(audioDataInput)
                 lastTimeAudio = time.time()
         
     @abstractmethod
@@ -177,8 +180,9 @@ class checkAudioFeedCheating_client(audioProcessing_client):
     
     #Overrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
-        #print("Running processAudio() from checkAudioFeedCheating_client")
-        #TODO Implement methods to check for cheating in audio
+        #audioInput is received as raw bytes
+
+
         pass
 
 ############################################################################################################

@@ -48,10 +48,10 @@ def start_streamlit():
             #videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
             #placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
 
-            #Using base64 and markdown to avoid reloading the whole website when displaying a new image
             #base64 can only display 64 signs: A-Z, a-z, 0-9, +, /
-            #Browsers/HTML can convert base64 back to bytes and display the image
+            #Browsers/HTML can convert base64 back to bytes and display the image; No need to convert bytes to numpyArray
             b64 = base64.b64encode(videoDataInputBytes).decode()
+            #Use of markdown avoids creation of react component
             placeholder_video.markdown(
                 f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
                 unsafe_allow_html=True
@@ -63,19 +63,25 @@ def start_streamlit():
             lastTime = currentTime
 
         if socket_audio_sub in pollerSockets:
-            #videoData = socket_video_sub.recv_pyobj()
+            #Audio data is of type int16 and represents the position of the membran of the microphone
+            #Every value is represented as 16 bits = 2 Bytes
+            #16 bits : 65536 values from -32768 to +32767 
             audioData = socket_audio_sub.recv()
 
-            #print(videoData)
+            
 
+            #Turn every 16 bits into 1 integer value
+            #paInt16 : 2 Bytes = 1 Value
+            #Into float32 because np.mean and np.abs only work with float
             audioNpArray = np.frombuffer(audioData, dtype=np.int16).astype(np.float32)
-
+            
+            #TODO find a better way to display audio
             audioMeanAbs = float(np.mean(np.abs(audioNpArray)))
             oldAudioInput = np.roll(oldAudioInput, -1)
             oldAudioInput[-1] = audioMeanAbs
             placeholder_audio.line_chart(oldAudioInput)
             pass
-        #TODO find a better way to display audio
+        
 
 def main():
     start_streamlit()
