@@ -72,7 +72,7 @@ def start_streamlit():
 
             oldAudioInput = np.roll(oldAudioInput, -1)
             oldAudioInput[-1] = audioDatadB
-            placeholder_audio.line_chart(oldAudioInput)
+            placeholder_audio.bar_chart(oldAudioInput)
             pass
         
 
