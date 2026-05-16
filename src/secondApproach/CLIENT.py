@@ -69,32 +69,44 @@ class videoProcessing_client(Client):
         lastTimeVideo = time.time()
         while True:
             # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
-            #dataInput = self.socket_video_sub.recv_pyobj()
-
+            
+            #RECEIVE BYTES
+            #-----------------------------------------------
             #Receive data as raw bytes
             videoDataInputBytes = self.socket_video_sub.recv()
+            #-----------------------------------------------
+
+            #BYTES TO DATA 
+            #-----------------------------------------------
+            #Turn bytes into numpy array as image with color to be able to work with the data
+            videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
+            #-----------------------------------------------
 
 
+            #PROCESS DATA 
+            #-----------------------------------------------
+            #Use numpy array and process the data
+            videoDataOutputNumpyArray = self.processVideo(videoDataInputNumpyArray)
+            #-----------------------------------------------
+
+
+            #DATA TO BYTES
+            #-----------------------------------------------
+            #Convert numpy array back to raw bytes 
+            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoDataOutputNumpyArray, [cv2.IMWRITE_JPEG_QUALITY, 50])
+            
+            #Converts bytes numpyArray to the raw bytes 
+            imageDataOutputRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
+            #-----------------------------------------------
 
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
-                #Turn bytes into numpy array as image with color to be able to work with the data
-                videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
 
-                #Use numpy array and process the data
-                videoDataOutputNumpyArray = self.processVideo(videoDataInputNumpyArray)
 
-                #Convert numpy array back to raw bytes 
-
-                success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoDataOutputNumpyArray, [cv2.IMWRITE_JPEG_QUALITY, 50])
-                
-                #Converts bytes numpyArray to the raw bytes 
-                imageRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
-
-                #TODO change dataInput to dataOutput; Right now because of test reasons
-                #self.socket_pub.send_pyobj(dataInput)
-
+                #SEND BYTES 
+                #-----------------------------------------------
                 #Convert numpy array back to bytes to send the data
-                self.socket_video_pub.send(imageRawBytes)
+                self.socket_video_pub.send(imageDataOutputRawBytes)
+                #-----------------------------------------------
 
                 lastTimeVideo = time.time()
         
@@ -133,16 +145,44 @@ class audioProcessing_client(Client):
         lastTimeAudio = time.time()
         while True:
             # Data should be received and processed as quick as possible; Only the rate of sending should be restricted
+            
+            
+            #RECEIVE BYTES
+            #-----------------------------------------------
             # audio is received as raw bytes
-            audioDataInput = self.socket_audio_sub.recv()
+            audioDataInputBytes = self.socket_audio_sub.recv()
+            #-----------------------------------------------
 
-            #send raw bytes to process method
-            dataOutput = self.processAudio(audioDataInput)
+
+            #BYTES TO DATA 
+            #-----------------------------------------------
+            # Nothing to do since we can work with bytes directly for audio
+            #-----------------------------------------------
+
+
+            #PROCESS DATA 
+            #-----------------------------------------------
+            #Process data (bytes because of audio)
+            dataOutput = self.processAudio(audioDataInputBytes)
+            #-----------------------------------------------
+
+
+            #DATA TO BYTES
+            #-----------------------------------------------
+            # TODO Convert dB back to Bytes
+            #-----------------------------------------------
+
+
             if time.time() - lastTimeAudio > 1/self.audioSendRate:
-                #topicInput = self.socket_audio_sub.recv_string()
-
                 #TODO change dataInput to dataOuput; right now for test reasons
-                self.socket_pub.send(audioDataInput)
+                
+                
+                #SEND BYTES
+                #-----------------------------------------------
+                self.socket_pub.send(audioDataInputBytes)
+                #-----------------------------------------------
+
+
                 lastTimeAudio = time.time()
         
     @abstractmethod
@@ -181,6 +221,11 @@ class checkAudioFeedCheating_client(audioProcessing_client):
     #Overrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
         #audioInput is received as raw bytes
+        #The input is the size of parameter CHUNK in Server, here 1024
+
+        #Turn Bytes into NumpyArray with data of type float32
+        audioNpArray = np.frombuffer(audioInput, dtype=np.int16).astype(np.float32)
+        audioNpArrayMeanAbs = float(np.mean(np.abs(audioNpArray)))
 
 
         pass
