@@ -6,6 +6,7 @@ import cv2
 import time
 import base64
 import struct
+import msgpack
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
@@ -14,8 +15,8 @@ currentTopicSubscribedTo = None
 
 def start_streamlit():
     #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
-    videoInputPort = 5001
-    audioInputPort = 5002
+    videoInputPort = 6001
+    audioInputPort = 6002
 
     context = zmq.Context()
 
@@ -125,6 +126,16 @@ def start_streamlit():
         #topic = socket_video_sub.recv_string()
         pollerSockets = dict(poller.poll(timeout=16))
         if socket_video_sub in pollerSockets:
+
+            topic = socket_video_sub.recv_string()
+            metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
+            print(metaData[0], metaData[1], metaData[2], metaData[3])
+
+            if topic == "cheated":
+                #TODO add what to happen, when topic is cheated
+                pass
+
+
             videoDataInputBytes = socket_video_sub.recv()
 
 
@@ -133,10 +144,10 @@ def start_streamlit():
 
             #base64 can only display 64 signs: A-Z, a-z, 0-9, +, /
             #Browsers/HTML can convert base64 back to bytes and display the image; No need to convert bytes to numpyArray
-            b64 = base64.b64encode(videoDataInputBytes).decode()
+            imageInb64 = base64.b64encode(videoDataInputBytes).decode()
             #Use of markdown avoids creation of react component
             placeholder_video.markdown(
-                f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
+                f'<img src="data:image/jpeg;base64,{imageInb64}" style="width:100%">',
                 unsafe_allow_html=True
             )
 

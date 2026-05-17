@@ -11,7 +11,7 @@ import msgpack
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
     ID = 0 #Number of created Clients
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
 
         #Set the attributes to determine the type of client
         #Attributes are not allowed to include zeromq
@@ -39,8 +39,8 @@ class Client(ABC):
 #Subclass of Client
 #General client for analyzing the video input in any kind of way
 class videoCheck_client(Client):
-    def __init__(self, useCase="checkVideo", messagingType="SUB", protocol="tcp"):
-        Client.__init__(self, useCase="checkVideo", messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        Client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.portPUB = 6001
         self.videoSendRate = 30 #Amount of frames sent per second 
 
@@ -101,6 +101,7 @@ class videoCheck_client(Client):
             
             #Converts bytes numpyArray to the raw bytes 
             imageDataOutputRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
+            videoMetaDataInBytes = msgpack.pack(videoMetaData)
             #-----------------------------------------------
 
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
@@ -113,7 +114,7 @@ class videoCheck_client(Client):
                 #Every video client sends his image to his specifif port (st.pills in streamlit) 
                 self.socket_video_pub.send_string(f"{self.topic}", zmq.SNDMORE)
                 #TODO send meta data 
-                self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE) #SEND META DAT
+                self.socket_video_pub.send(videoMetaDataInBytes, zmq.SNDMORE) #SEND META DATA
                 self.socket_video_pub.send(imageDataOutputRawBytes) #SEND IMAGE
                 #-----------------------------------------------
 
@@ -137,8 +138,8 @@ class videoCheck_client(Client):
 #Specifif use case for processing the video input, in this case to 
 #check if the person is same as the embedding from group1
 class checkVideoRaw_client(videoCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "rawVideo"
     def run(self):
         videoCheck_client.run(self)
@@ -148,7 +149,7 @@ class checkVideoRaw_client(videoCheck_client):
     def processVideo(self, videoInput):
         dataOutput = videoInput
         #The name of the topic will show if cheating was detected 
-        outputList = [self.Topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
+        outputList = [self.topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
         return outputList
         #TODO change name and matnum to real values -> from group1
 
@@ -156,8 +157,8 @@ class checkVideoRaw_client(videoCheck_client):
 #Specifif use case for processing the video input, in this case to 
 #check if the person is same as the embedding from group1
 class checkVideoDiffPerson_client(videoCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "diffPerson"
 
     def run(self):
@@ -176,8 +177,8 @@ class checkVideoDiffPerson_client(videoCheck_client):
 #Specifif use case for processing the video input, in this case to check if more than one 
 #person is seen in the video feed
 class checkVideoSevPeople_client(videoCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "sevPeople"
 
     def run(self):
@@ -195,8 +196,8 @@ class checkVideoSevPeople_client(videoCheck_client):
 
 #Specifif use case for processing the video input, in this case for checking video input for cheating
 class checkVideoDevices_client(videoCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "findDevice"
 
     def run(self):
@@ -213,8 +214,8 @@ class checkVideoDevices_client(videoCheck_client):
 ############################################################################################################
 #Specifif use case for processing the video input, in this case for checking video input for cheating
 class checkVideoCameraOff_client(videoCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "cameraOff"
 
     def run(self):
@@ -232,8 +233,8 @@ class checkVideoCameraOff_client(videoCheck_client):
 
 #Specifif use case for processing the video input, in this case to check if person is going without giving handsign
 class checkVideoGoWithoutHandsign_client(videoCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "withoutHandsign"
 
     def run(self):
@@ -250,8 +251,8 @@ class checkVideoGoWithoutHandsign_client(videoCheck_client):
 ############################################################################################################
 #Abstract class for analyzing the audio input in any kind of way
 class audioCheck_client(Client):
-    def __init__(self, useCase="checkAudio", messagingType="SUB", protocol="tcp"):
-        Client.__init__(self, useCase="checkAudio", messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        Client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.portPUB = 6002
         self.audioSendRate = 10 #Amount of data samples sent per second
 
@@ -303,10 +304,8 @@ class audioCheck_client(Client):
 
             #DATA TO BYTES
             #-----------------------------------------------
-            # Converts float to bytes 
-            # ?f == bool, float
-            #TODO convert the outputList into bytes
-            dataOutputBytes = bytearray(struct.pack("?f", audioCheated, audioData))
+            audioDataInBytes = msgpack.pack(audioData)
+            audioMetaDataInBytes = msgpack.pack(audioMetaData)
             #-----------------------------------------------
 
 
@@ -316,7 +315,8 @@ class audioCheck_client(Client):
                 #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
                 #-----------------------------------------------
                 self.socket_audio_pub.send_string(f"{self.topic}", zmq.SNDMORE)
-                self.socket_audio_pub.send(audioData)
+                self.socket_audio_pub.send(audioMetaDataInBytes)
+                self.socket_audio_pub.send(audioDataInBytes)
                 #-----------------------------------------------
 
                 #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
@@ -336,8 +336,8 @@ class audioCheck_client(Client):
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if the person is whispering
 class checkAudioRaw_client(audioCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "rawAudio"
 
     def run(self):
@@ -352,8 +352,8 @@ class checkAudioRaw_client(audioCheck_client):
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if volume threshold in dB is breached
 class checkAudioLoud_client(audioCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "loud"
 
         #Using OpenAIs Neural Network whisper to extract words from recorded samples
@@ -409,8 +409,8 @@ class checkAudioLoud_client(audioCheck_client):
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if the person is whispering
 class checkAudioWhisper_client(audioCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "whisper"
 
     def run(self):
@@ -423,8 +423,8 @@ class checkAudioWhisper_client(audioCheck_client):
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if microphone is turned off/muted
 class checkAudioMicOff_client(audioCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "microphoneOff"
 
     def run(self):
@@ -437,8 +437,8 @@ class checkAudioMicOff_client(audioCheck_client):
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case for extracting spoken words from audio sequence
 class checkAudioGetWords_client(audioCheck_client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        audioCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
+        audioCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "getWords"
 
     def run(self):
