@@ -11,8 +11,8 @@ import struct
 
 def start_streamlit():
     #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
-    videoInputPort = 6001
-    audioInputPort = 6002
+    videoInputPort = 5001
+    audioInputPort = 5002
 
     context = zmq.Context()
 
@@ -34,6 +34,13 @@ def start_streamlit():
     poller.register(socket_audio_sub, zmq.POLLIN)
 
     st.title("Remote exam surveillance")
+    videoSelectionOptions = ["cameraFeed", "faceDetection", "deviceDetection" ,"cameraOff"]
+    videoSelectionUser = st.pills("Video Selection Options: ", videoSelectionOptions, selection_mode="single")
+    #TODO remove following line
+    st.markdown(f"Your selected options: {videoSelectionUser}.")
+
+
+
     placeholder_video = st.empty()
     placeholder_audio = st.empty()
     placeholder_cheatedStatus = st.empty()

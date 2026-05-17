@@ -61,7 +61,7 @@ class videoCheck_client(Client):
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_video_pub = self.context.socket(zmq.PUB)  
-        self.socket_video_pub.bind(f"{self.protocol}://*:{self.PUBport}")
+        self.socket_video_pub.bind(f"{self.protocol}://*:{self.portPUB}") #6001
 
         lastTimeVideo = time.time()
         while True:
@@ -228,7 +228,7 @@ class audioCheck_client(Client):
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_pub = self.context.socket(zmq.PUB)  
-        self.socket_pub.bind(f"{self.protocol}://*:{self.PUBport}")
+        self.socket_pub.bind(f"{self.protocol}://*:{self.portPUB}") #6002
 
         lastTimeAudio = time.time()
         while True:

@@ -15,8 +15,8 @@ def main():
 
     #Create the Objects which will send and receive data
     server= SERVER.Server()
-    client_video = CLIENT.checkVideoFeedCheating_client("videoAnalysis")
-    client_audio = CLIENT.checkAudioFeedCheating_client("audioAnalysis")
+    client_video = CLIENT.checkVideoDiffPerson_client("videoAnalysis")
+    client_audio = CLIENT.checkAudioLoud_client("audioAnalysis")
 
 
     #Use package multiprocessing to run the run-method of each object in a different process
@@ -35,8 +35,8 @@ def main():
     client_audio_process.start()
 
     #Starting streamlit as a program by using the package subprocess
-    print("video client output port", client_video.PUBport)
-    print("audio client output port", client_audio.PUBport)
+    print("video client output port", client_video.portPUB)
+    print("audio client output port", client_audio.portPUB)
     streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py"], stdout = sys.stdout, stderr = sys.stderr)
     
     
