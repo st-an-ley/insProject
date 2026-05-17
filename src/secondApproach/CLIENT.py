@@ -141,8 +141,10 @@ class checkVideoRaw_client(videoCheck_client):
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processVideo(self, videoInput):
         dataOutput = videoInput
-        outputList = [False, videoInput]
+        #The name of the topic will show if cheating was detected 
+        outputList = [self.Topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
         return outputList
+        #TODO change name and matnum to real values -> from group1
 
 ############################################################################################################        
 #Specifif use case for processing the video input, in this case to 
@@ -287,8 +289,6 @@ class audioCheck_client(Client):
             #-----------------------------------------------
             #Process data (bytes because of audio)
             processedData = self.processAudio(audioDataInputBytes)
-            audioCheated = processedData[0] # stores if cheating was detected
-            audioData = processedData[1] # stores the dB value
             #-----------------------------------------------
 
 
@@ -296,6 +296,7 @@ class audioCheck_client(Client):
             #-----------------------------------------------
             # Converts float to bytes 
             # ?f == bool, float
+            #TODO convert the outputList into bytes
             dataOutputBytes = bytearray(struct.pack("?f", audioCheated, audioData))
             #-----------------------------------------------
 
@@ -335,7 +336,9 @@ class checkAudioRaw_client(audioCheck_client):
     
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
-        pass 
+        dataOutput = audioInput
+        outputList = [self.Topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
+        return outputList
 
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if volume threshold in dB is breached

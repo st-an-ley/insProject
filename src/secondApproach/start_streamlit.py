@@ -27,10 +27,22 @@ def start_streamlit():
     socket_video_sub.connect(f"tcp://localhost:{videoInputPort}")
     socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
+    #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated"
+    #Specific topics follow down below
+    socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
+
+
+
+
     #SUBSCRIBER socket for audio with corresponding port
     socket_audio_sub = context.socket(zmq.SUB)
     socket_audio_sub.connect(f"tcp://localhost:{audioInputPort}")
     socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'')
+
+    #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated"
+    #Specific topics follow down below
+    socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
+
 
     poller = zmq.Poller()
     poller.register(socket_video_sub, zmq.POLLIN)
