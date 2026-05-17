@@ -15,8 +15,8 @@ def main():
 
     #Create the Objects which will send and receive data
     server= SERVER.Server()
-    client_video = CLIENT.checkVideoDiffPerson_client("videoAnalysis")
-    client_audio = CLIENT.checkAudioLoud_client("audioAnalysis")
+    client_rawVideo = CLIENT.checkVideoRaw_client()
+    client_rawAudio = CLIENT.checkAudioRaw_client()
 
 
     #Use package multiprocessing to run the run-method of each object in a different process
@@ -25,8 +25,8 @@ def main():
 
     #target=x.run determines that in each process the run method of the object is executed after being started
     server_process = multiprocessing.Process(target=server.run)
-    client_video_process = multiprocessing.Process(target=client_video.run)
-    client_audio_process = multiprocessing.Process(target=client_audio.run)
+    client_video_process = multiprocessing.Process(target=client_rawVideo.run)
+    client_audio_process = multiprocessing.Process(target=client_rawAudio.run)
 
 
     #Starting each process, so executing the run method of each object

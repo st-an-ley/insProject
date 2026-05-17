@@ -38,8 +38,8 @@ class Client(ABC):
 #Subclass of Client
 #General client for analyzing the video input in any kind of way
 class videoCheck_client(Client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="checkVideo", messagingType="SUB", protocol="tcp"):
+        Client.__init__(self, useCase="checkVideo", messagingType="SUB", protocol="tcp")
         self.portPUB = 6001
         self.videoSendRate = 30 #Amount of frames sent per second 
 
@@ -140,10 +140,9 @@ class checkVideoRaw_client(videoCheck_client):
 
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processVideo(self, videoInput):
-        #TODO change dataOutput to correct data
         dataOutput = videoInput
-        return dataOutput
-        #TODO Implement methods to check for cheating in video
+        outputList = [False, videoInput]
+        return outputList
 
 ############################################################################################################        
 #Specifif use case for processing the video input, in this case to 
@@ -190,7 +189,7 @@ class checkVideoSevPeople_client(videoCheck_client):
 class checkVideoDevices_client(videoCheck_client):
     def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
         videoCheck_client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
-        self.topic = "findDevices"
+        self.topic = "findDevice"
 
     def run(self):
         videoCheck_client.run(self)
@@ -243,8 +242,8 @@ class checkVideoGoWithoutHandsign_client(videoCheck_client):
 ############################################################################################################
 #Abstract class for analyzing the audio input in any kind of way
 class audioCheck_client(Client):
-    def __init__(self, useCase, messagingType="SUB", protocol="tcp"):
-        Client.__init__(self, useCase, messagingType="SUB", protocol="tcp")
+    def __init__(self, useCase="checkAudio", messagingType="SUB", protocol="tcp"):
+        Client.__init__(self, useCase="checkAudio", messagingType="SUB", protocol="tcp")
         self.portPUB = 6002
         self.audioSendRate = 10 #Amount of data samples sent per second
 

@@ -17,7 +17,7 @@ def start_client_stream():
         topic = socket_sub.recv_string()
         frameData = socket_sub.recv_pyobj()
         placeholder.image(frameData, channels="BGR")
-
+        
 def main():
     start_client_stream()
 

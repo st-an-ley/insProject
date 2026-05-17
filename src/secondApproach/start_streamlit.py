@@ -18,7 +18,7 @@ def start_streamlit():
     audioInputPort = 5002
 
     context = zmq.Context()
-    
+
 
 
     #SUBSCRIBER socket for video with corresponding port
@@ -39,7 +39,7 @@ def start_streamlit():
     st.title("Remote exam surveillance")
 
     #-------------------------------------------------
-    videoSelectionOptions = ["cameraFeed", "faceDetection", "deviceDetection" ,"cameraOff"]
+    videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople" "deviceDetection" ,"cameraOff"]
     videoSelectionUser = st.pills("Video Selection Options: ", videoSelectionOptions, selection_mode="single")
     #TODO remove following line
     st.markdown(f"Your selected options: {videoSelectionUser}.")
@@ -50,7 +50,7 @@ def start_streamlit():
 
 
     #-------------------------------------------------
-    audioSelectionOptions = ["microphoneSignal", "whispering", "spoken words" ,"microphoneOff"]
+    audioSelectionOptions = ["microphoneSignal", "volume", "whispering", "spokenWords" ,"microphoneOff"]
     audioSelectionUser = st.pills("Audio Selection Options: ", audioSelectionOptions, selection_mode="single")
     #TODO remove following line
     st.markdown(f"Your selected options: {audioSelectionUser}.")
@@ -67,6 +67,49 @@ def start_streamlit():
     lastTime = time.time()
     activated = False
     while True:
+
+        #---------------------------------------------------------------------------------
+        #Check current video menu in streamlit GUI
+        match audioSelectionOptions:
+            case "microphoneSignal":
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
+                break
+            case "volume":
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
+                break
+            case "whispering":
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
+                break
+            case "spokenWords":
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
+                break
+            case "microphoneOff":
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
+                break
+        #---------------------------------------------------------------------------------
+            
+
+        #---------------------------------------------------------------------------------
+        #Check current audio menu in streamlit GUI
+        match videoSelectionOptions:
+            case "cameraFeed":
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
+                break
+            case "faceRecognition":
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
+                break
+            case "severalPeople":
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
+                break
+            case "deviceDetection":
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
+                break
+            case "cameraOff":
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
+                break
+        #---------------------------------------------------------------------------------
+
+
         #topic = socket_video_sub.recv_string()
         pollerSockets = dict(poller.poll(timeout=16))
         if socket_video_sub in pollerSockets:
