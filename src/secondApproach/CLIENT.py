@@ -107,7 +107,7 @@ class videoCheck_client(Client):
                 #Convert numpy array back to bytes to send the data
 
                 #Every video client sends his image to his specifif port (st.pills in streamlit) 
-                self.socket_video_pub.send_string(self.topic, zmq.SNDMORE)
+                self.socket_video_pub.send_string(f"{self.topic}", zmq.SNDMORE)
                 self.socket_video_pub.send(imageDataOutputRawBytes)
                 #-----------------------------------------------
 
@@ -305,7 +305,7 @@ class audioCheck_client(Client):
 
                 #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
                 #-----------------------------------------------
-                self.socket_audio_pub.send_string(self.topic, zmq.SNDMORE)
+                self.socket_audio_pub.send_string(f"{self.topic}", zmq.SNDMORE)
                 self.socket_audio_pub.send(audioData)
                 #-----------------------------------------------
 
