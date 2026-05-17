@@ -62,7 +62,7 @@ class videoCheck_client(Client):
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_video_pub = self.context.socket(zmq.PUB)  
-        self.socket_video_pub.bind(f"{self.protocol}://*:{self.portPUB}") #6001
+        self.socket_video_pub.connect(f"{self.protocol}://localhost:{self.portPUB}") #6001
 
         lastTimeVideo = time.time()
         while True:
@@ -101,7 +101,7 @@ class videoCheck_client(Client):
             
             #Converts bytes numpyArray to the raw bytes 
             imageDataOutputRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
-            videoMetaDataInBytes = msgpack.pack(videoMetaData)
+            videoMetaDataInBytes = msgpack.packb(videoMetaData)
             #-----------------------------------------------
 
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
@@ -272,7 +272,7 @@ class audioCheck_client(Client):
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_audio_pub = self.context.socket(zmq.PUB)  
-        self.socket_audio_pub.bind(f"{self.protocol}://*:{self.portPUB}") #6002
+        self.socket_audio_pub.connect(f"{self.protocol}://localhost:{self.portPUB}") #6002
 
         lastTimeAudio = time.time()
         while True:
@@ -304,8 +304,8 @@ class audioCheck_client(Client):
 
             #DATA TO BYTES
             #-----------------------------------------------
-            audioDataInBytes = msgpack.pack(audioData)
-            audioMetaDataInBytes = msgpack.pack(audioMetaData)
+            audioDataInBytes = msgpack.packb(audioData)
+            audioMetaDataInBytes = msgpack.packb(audioMetaData)
             #-----------------------------------------------
 
 
@@ -346,7 +346,7 @@ class checkAudioRaw_client(audioCheck_client):
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
         dataOutput = audioInput
-        outputList = [self.Topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
+        outputList = [self.topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
         return outputList
 
 ############################################################################################################
@@ -356,14 +356,14 @@ class checkAudioLoud_client(audioCheck_client):
         audioCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
         self.topic = "loud"
 
-        #Using OpenAIs Neural Network whisper to extract words from recorded samples
-        #Loading model; Chosing "base" because it is small enough to run without GPU
-        self.whisper_model = whisper.load_model("base")
-        #Time in seconds in which whisper can search for words
-        self.secondsForWhisper = 5
+        # #Using OpenAIs Neural Network whisper to extract words from recorded samples
+        # #Loading model; Chosing "base" because it is small enough to run without GPU
+        # self.whisper_model = whisper.load_model("base")
+        # #Time in seconds in which whisper can search for words
+        # self.secondsForWhisper = 5
 
-        #fs=20000 : values per second; values/second * seconds = values over all seconds
-        self.storageForWhisper = np.zeros(20000*self.secondsForWhisper)
+        # #fs=20000 : values per second; values/second * seconds = values over all seconds
+        # self.storageForWhisper = np.zeros(20000*self.secondsForWhisper)
 
 
     def run(self):

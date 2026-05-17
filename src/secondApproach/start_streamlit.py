@@ -25,7 +25,7 @@ def start_streamlit():
     #SUBSCRIBER socket for video with corresponding port
     socket_video_sub = context.socket(zmq.SUB)
     socket_video_sub.setsockopt(zmq.RCVHWM, 1)        
-    socket_video_sub.connect(f"tcp://localhost:{videoInputPort}")
+    socket_video_sub.bind(f"tcp://*:{videoInputPort}")
     socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
     #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated"
@@ -37,7 +37,7 @@ def start_streamlit():
 
     #SUBSCRIBER socket for audio with corresponding port
     socket_audio_sub = context.socket(zmq.SUB)
-    socket_audio_sub.connect(f"tcp://localhost:{audioInputPort}")
+    socket_audio_sub.bind(f"tcp://*:{audioInputPort}")
     socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
     #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated"
@@ -52,7 +52,7 @@ def start_streamlit():
     st.title("Remote exam surveillance")
 
     #-------------------------------------------------
-    videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople" "deviceDetection" ,"cameraOff"]
+    videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople", "deviceDetection" ,"cameraOff"]
     videoSelectionUser = st.pills("Video Selection Options: ", videoSelectionOptions, selection_mode="single")
     #TODO remove following line
     st.markdown(f"Your selected options: {videoSelectionUser}.")
@@ -83,43 +83,43 @@ def start_streamlit():
 
         #---------------------------------------------------------------------------------
         #Check current video menu in streamlit GUI
-        match audioSelectionOptions:
+        match audioSelectionUser:
             case "microphoneSignal":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
-                break
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
+                
             case "volume":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
-                break
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
+                
             case "whispering":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
-                break
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
+                
             case "spokenWords":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
-                break
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
+                
             case "microphoneOff":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
-                break
+                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
+                
         #---------------------------------------------------------------------------------
             
 
         #---------------------------------------------------------------------------------
         #Check current audio menu in streamlit GUI
-        match videoSelectionOptions:
+        match videoSelectionUser:
             case "cameraFeed":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
-                break
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
+                
             case "faceRecognition":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
-                break
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
+                
             case "severalPeople":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
-                break
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
+                
             case "deviceDetection":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
-                break
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
+                
             case "cameraOff":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
-                break
+                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
+                
         #---------------------------------------------------------------------------------
 
 
@@ -129,7 +129,7 @@ def start_streamlit():
 
             topic = socket_video_sub.recv_string()
             metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
-            print(metaData[0], metaData[1], metaData[2], metaData[3])
+            print(metaData[0], metaData[1], metaData[2])
 
             if topic == "cheated":
                 #TODO add what to happen, when topic is cheated

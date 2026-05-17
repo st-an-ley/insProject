@@ -5,6 +5,7 @@ import subprocess
 import sys
 import multiprocessing
 import os 
+import time
 
 
 #main script to start the app
@@ -13,6 +14,8 @@ import os
 
 def main():
 
+    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py"], stdout = sys.stdout, stderr = sys.stderr)
+    time.sleep(2)
     #Create the Objects which will send and receive data
     server= SERVER.Server()
     client_rawVideo = CLIENT.checkVideoRaw_client()
@@ -38,7 +41,6 @@ def main():
     #Starting streamlit as a program by using the package subprocess
     print("video client output port", client_rawVideo.portPUB)
     print("audio client output port", client_rawAudio.portPUB)
-    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py"], stdout = sys.stdout, stderr = sys.stderr)
     
     
     print("main process id", os.getpid())
