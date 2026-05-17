@@ -34,16 +34,31 @@ def start_streamlit():
     poller.register(socket_audio_sub, zmq.POLLIN)
 
     st.title("Remote exam surveillance")
+
+    #-------------------------------------------------
     videoSelectionOptions = ["cameraFeed", "faceDetection", "deviceDetection" ,"cameraOff"]
     videoSelectionUser = st.pills("Video Selection Options: ", videoSelectionOptions, selection_mode="single")
     #TODO remove following line
     st.markdown(f"Your selected options: {videoSelectionUser}.")
 
-
-
     placeholder_video = st.empty()
+    #-------------------------------------------------
+
+
+
+    #-------------------------------------------------
+    audioSelectionOptions = ["microphoneSignal", "whispering", "spoken words" ,"microphoneOff"]
+    audioSelectionUser = st.pills("Audio Selection Options: ", audioSelectionOptions, selection_mode="single")
+    #TODO remove following line
+    st.markdown(f"Your selected options: {audioSelectionUser}.")
+
     placeholder_audio = st.empty()
+    #-------------------------------------------------
+
+    
+
     placeholder_cheatedStatus = st.empty()
+
     oldAudioInput = np.zeros(100)
 
     lastTime = time.time()
