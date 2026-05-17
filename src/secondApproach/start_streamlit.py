@@ -9,13 +9,16 @@ import struct
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
+currentTopicSubscribedTo = None 
+
+
 def start_streamlit():
     #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
     videoInputPort = 5001
     audioInputPort = 5002
 
     context = zmq.Context()
-
+    
 
 
     #SUBSCRIBER socket for video with corresponding port
@@ -55,7 +58,7 @@ def start_streamlit():
     placeholder_audio = st.empty()
     #-------------------------------------------------
 
-    
+
 
     placeholder_cheatedStatus = st.empty()
 
@@ -125,7 +128,27 @@ def start_streamlit():
                 placeholder_cheatedStatus.warning("Cheating detected, supervisor was informed")
             #-------------------------------------------------
             
-        
+#Functions to make it possible for streamlit to change between different topics
+#-------------------------------------------------
+def switch_topic_video(newTopic):
+    global currentTopicSubscribedTo
+    global socket_video_sub
+    #To avoid issues at first topic
+    if currentTopicSubscribedTo != None:
+        socket_video_sub.setsockopt_string(zmq.UNSUBSCRIBE, currentTopicSubscribedTo)
+    socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, newTopic)
+    currentTopicSubscribedTo = newTopic
+
+def switch_topic_audio(newTopic):
+    global currentTopicSubscribedTo
+    global socket_audio_sub
+    #To avoid issues at first topic
+    if currentTopicSubscribedTo != None:
+        socket_audio_sub.setsockopt_string(zmq.UNSUBSCRIBE, currentTopicSubscribedTo)
+    socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, newTopic)
+    currentTopicSubscribedTo = newTopic
+
+#-------------------------------------------------
 
 def main():
     start_streamlit()
