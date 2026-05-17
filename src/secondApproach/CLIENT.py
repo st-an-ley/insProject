@@ -6,6 +6,7 @@ import cv2
 import numpy as np 
 import struct
 import whisper 
+import msgpack
 
 #Abstract Class Client enherited from Abstract Base Class 
 class Client(ABC):
@@ -84,9 +85,12 @@ class videoCheck_client(Client):
             #-----------------------------------------------
             #Image will be processed in any kind of way
             #[0] : if cheating was detected, [1]: type of cheating , [2] : the actual proof as image as numpyArray
-            processVideoOutput = self.processVideo(videoDataInputNumpyArray)
-            videoCheated = processVideoOutput[0]
-            videoData = processVideoOutput[1]
+            processedVideoOutput = self.processVideo(videoDataInputNumpyArray)
+
+            #SPLIT PROCESSED OUTPUT IN META DATA AND VIDEO DATA
+            videoData = processedVideoOutput[1]
+            processedVideoOutput.pop(1)
+            videoMetaData = processedVideoOutput
             #-----------------------------------------------
 
 
@@ -108,13 +112,15 @@ class videoCheck_client(Client):
 
                 #Every video client sends his image to his specifif port (st.pills in streamlit) 
                 self.socket_video_pub.send_string(f"{self.topic}", zmq.SNDMORE)
-                self.socket_video_pub.send(imageDataOutputRawBytes)
+                #TODO send meta data 
+                self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE) #SEND META DAT
+                self.socket_video_pub.send(imageDataOutputRawBytes) #SEND IMAGE
                 #-----------------------------------------------
 
                 #SEND BYTES TO "cheated" TOPIC IF CHEATING WAS DETECTED
                 #-----------------------------------------------
                 #If cheating was detected
-                if videoCheated != 0:
+                if videoMetaData[0] == "cheated":
                     self.socket_video_pub.send_string("cheated", zmq.SNDMORE)
                     self.socket_video_pub.send(imageDataOutputRawBytes)
 
@@ -288,7 +294,10 @@ class audioCheck_client(Client):
             #PROCESS DATA 
             #-----------------------------------------------
             #Process data (bytes because of audio)
-            processedData = self.processAudio(audioDataInputBytes)
+            processedAudioOutput = self.processAudio(audioDataInputBytes)
+            audioData = processedAudioOutput[1]
+            processedAudioOutput.pop(1)
+            audioMetaData = processedAudioOutput
             #-----------------------------------------------
 
 
@@ -313,7 +322,7 @@ class audioCheck_client(Client):
                 #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
                 #-----------------------------------------------
                 # If cheating was detected
-                if audioCheated !=0:
+                if audioMetaData[0] == "cheated":
                     self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
                     self.socket_audio_pub.send(audioData)
                 #-----------------------------------------------
