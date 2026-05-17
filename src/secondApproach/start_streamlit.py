@@ -11,8 +11,8 @@ import struct
 
 def start_streamlit():
     #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
-    videoInputPort = sys.argv[1]
-    audioInputPort = sys.argv[2]
+    videoInputPort = 6001
+    audioInputPort = 6002
 
     context = zmq.Context()
 
