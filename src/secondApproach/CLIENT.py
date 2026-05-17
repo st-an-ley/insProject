@@ -85,13 +85,15 @@ class videoCheck_client(Client):
             #Image will be processed in any kind of way
             #[0] : if cheating was detected, [1]: type of cheating , [2] : the actual proof as image as numpyArray
             processVideoOutput = self.processVideo(videoDataInputNumpyArray)
+            videoCheated = processVideoOutput[0]
+            videoData = processVideoOutput[1]
             #-----------------------------------------------
 
 
             #DATA TO BYTES
             #-----------------------------------------------
             #Convert image for proof from numpyArray to Bytes
-            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', processVideoOutput[1], [cv2.IMWRITE_JPEG_QUALITY, 50])
+            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoData, [cv2.IMWRITE_JPEG_QUALITY, 50])
             
             #Converts bytes numpyArray to the raw bytes 
             imageDataOutputRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
@@ -100,10 +102,22 @@ class videoCheck_client(Client):
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
 
 
-                #SEND BYTES 
+                #SEND BYTES TO SPECIFIC TOPIC
                 #-----------------------------------------------
                 #Convert numpy array back to bytes to send the data
+
+                #Every video client sends his image to his specifif port (st.pills in streamlit) 
+                self.socket_video_pub.send_string(self.topic, zmq.SNDMORE)
                 self.socket_video_pub.send(imageDataOutputRawBytes)
+                #-----------------------------------------------
+
+                #SEND BYTES TO "cheated" TOPIC IF CHEATING WAS DETECTED
+                #-----------------------------------------------
+                #If cheating was detected
+                if videoCheated != 0:
+                    self.socket_video_pub.send_string("cheated", zmq.SNDMORE)
+                    self.socket_video_pub.send(imageDataOutputRawBytes)
+
                 #-----------------------------------------------
 
                 lastTimeVideo = time.time()
@@ -249,8 +263,8 @@ class audioCheck_client(Client):
         self.socket_audio_sub.connect(f"{self.protocol}://localhost:{self.audioSUBport}") #5002
 
         #Create PUBLISHER socket to send data to Streamlit
-        self.socket_pub = self.context.socket(zmq.PUB)  
-        self.socket_pub.bind(f"{self.protocol}://*:{self.portPUB}") #6002
+        self.socket_audio_pub = self.context.socket(zmq.PUB)  
+        self.socket_audio_pub.bind(f"{self.protocol}://*:{self.portPUB}") #6002
 
         lastTimeAudio = time.time()
         while True:
@@ -274,26 +288,35 @@ class audioCheck_client(Client):
             #-----------------------------------------------
             #Process data (bytes because of audio)
             processedData = self.processAudio(audioDataInputBytes)
-            dataOutputIndB = processedData[0] # stores the dB value
-            dataOutputCheated = processedData[1] # stores if cheating was detected
+            audioCheated = processedData[0] # stores if cheating was detected
+            audioData = processedData[1] # stores the dB value
             #-----------------------------------------------
 
 
             #DATA TO BYTES
             #-----------------------------------------------
             # Converts float to bytes 
-            dataOutputBytes = bytearray(struct.pack("f?", dataOutputIndB, dataOutputCheated))
+            # ?f == bool, float
+            dataOutputBytes = bytearray(struct.pack("?f", audioCheated, audioData))
             #-----------------------------------------------
 
 
             if time.time() - lastTimeAudio > 1/self.audioSendRate:
 
 
-                #SEND BYTES
+                #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
                 #-----------------------------------------------
-                self.socket_pub.send(dataOutputBytes)
+                self.socket_audio_pub.send_string(self.topic, zmq.SNDMORE)
+                self.socket_audio_pub.send(audioData)
                 #-----------------------------------------------
 
+                #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
+                #-----------------------------------------------
+                # If cheating was detected
+                if audioCheated !=0:
+                    self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
+                    self.socket_audio_pub.send(audioData)
+                #-----------------------------------------------
 
                 lastTimeAudio = time.time()
         
