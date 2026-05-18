@@ -40,7 +40,7 @@ class Client(ABC):
 #General client for analyzing the video input in any kind of way
 class videoCheck_client(Client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
-        Client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
+        Client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.portPUB = 6001
         self.videoSendRate = 30 #Amount of frames sent per second 
 
@@ -81,48 +81,44 @@ class videoCheck_client(Client):
             #-----------------------------------------------
 
 
-            #PROCESS DATA 
-            #-----------------------------------------------
-            #Image will be processed in any kind of way
-            #IMPORTANT Every client has output of the structure: 
-            #[0]=true/false if cheated
-            #[1]=clientName to specify message in streamlit
-            #[2]=timeStamp to know the time when cheating was detected
-            #[3]=matNr to find person in google sheets
-            #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
-            processedVideoOutput = self.processVideo(videoDataInputNumpyArray)
-
-            #SPLIT PROCESSED OUTPUT IN META DATA AND VIDEO DATA
-            videoData = processedVideoOutput[1]
-            processedVideoOutput.pop(1)
-            videoMetaData = processedVideoOutput
-            #-----------------------------------------------
-
-
-            #DATA TO BYTES
-            #-----------------------------------------------
-            #Convert image for proof from numpyArray to Bytes
-            success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoData, [cv2.IMWRITE_JPEG_QUALITY, 50])
-            
-            #Converts bytes numpyArray to the raw bytes 
-            imageDataOutputRawBytes = videoDataOutputNumpyJpgBytes.tobytes()
-            videoMetaDataInBytes = msgpack.packb(videoMetaData)
-            #-----------------------------------------------
-
             if time.time() - lastTimeVideo > 1/self.videoSendRate:
+
+
+                #PROCESS DATA 
+                #-----------------------------------------------
+                #Image will be processed in any kind of way
+                #IMPORTANT Every client has output of the structure: 
+                #[0]=true/false if cheated
+                #[1]=clientName to specify message in streamlit
+                #[2]=timeStamp to know the time when cheating was detected
+                #[3]=matNr to find person in google sheets
+                #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
+
+                #SPLIT PROCESSED OUTPUT IN META DATA AND VIDEO DATA
+                #IMPORTANT processVideo() returns two values: The metadata and the actual frame
+                videoMetaData, videoFrame = self.processVideo(videoDataInputNumpyArray)
+                #-----------------------------------------------
+
+                #DATA TO BYTES
+                #-----------------------------------------------
+                #Convert image for proof from numpyArray to Bytes
+                success, videoDataOutputNumpyJpgBytes = cv2.imencode('.jpg', videoFrame, [cv2.IMWRITE_JPEG_QUALITY, 50])
+                
+                #Converts bytes numpyArray to the raw bytes 
+                #-----------------------------------------------
 
 
                 #SEND BYTES TO SPECIFIC TOPIC
                 #-----------------------------------------------
                 #Convert numpy array back to bytes to send the data
 
-                #Every video client sends his image to his specifif port (st.pills in streamlit)
+                #Every video client sends his image to his specifif topic (st.pills in streamlit)
 
                 #SEND TOPIC AS STRING
                 self.socket_video_pub.send_string(f"{self.topic}", zmq.SNDMORE)
 
                 #SEND META DATA AS BYTES
-                #IMPORTANT use packb() and noch pack() 
+                #IMPORTANT use packb() and not pack() 
                 self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE)
 
                 #SEND IMAGE AS BYTES
@@ -131,9 +127,10 @@ class videoCheck_client(Client):
 
                 #SEND BYTES TO "cheated" TOPIC IF CHEATING WAS DETECTED
                 #-----------------------------------------------
-                #If cheating was detected
-                if "cheated" in videoMetaData[0]:
+                #IMPORTANT If cheating was detected, send data to topic "cheated" too 
+                if videoMetaData[0] == True:
                     self.socket_video_pub.send_string("cheated", zmq.SNDMORE)
+                    self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE)
                     self.socket_video_pub.send(imageDataOutputRawBytes)
 
                 #-----------------------------------------------
@@ -150,8 +147,8 @@ class videoCheck_client(Client):
 #check if the person is same as the embedding from group1
 class checkVideoRaw_client(videoCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
-        videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
-        self.topic = "cheatedrawVideo"
+        videoCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
+        self.topic = "rawVideo"
     def run(self):
         videoCheck_client.run(self)
 
@@ -161,8 +158,9 @@ class checkVideoRaw_client(videoCheck_client):
         dataOutput = videoInput
         #The name of the topic will show if cheating was detected 
         #TODO get the correct matrikel number
-        metaData = [False, self.topic, time.time(), "123456789", []]
-        videoOutput = videoInput
+        cheated = False #No if structure beause this client only copies the input frame
+        metaData = [cheated, self.topic, time.time(), "123456789", []]
+        videoOutput = videoInput #This client doesnt change the input frame
         return metaData, videoOutput
         #TODO change name and matnum to real values -> from group1
 
@@ -172,7 +170,7 @@ class checkVideoRaw_client(videoCheck_client):
 class checkVideoDiffPerson_client(videoCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
-        self.topic = "cheateddiffPerson"
+        self.topic = "diffPerson"
 
     def run(self):
         videoCheck_client.run(self)
@@ -181,6 +179,9 @@ class checkVideoDiffPerson_client(videoCheck_client):
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processVideo(self, videoInput):
         #TODO change dataOutput to correct data
+        cheated = False
+        #TODO if cheated == true: cheated = True --> Make it variable and depending on the processing
+        metaData = [cheated, self.topic, time.time(), "123456789", []]
         dataOutput = videoInput
         return dataOutput
         #TODO Implement methods to check for cheating in video
