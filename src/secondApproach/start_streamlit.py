@@ -78,7 +78,7 @@ def start_streamlit():
     oldAudioInput = np.zeros(100)
 
     lastTime = time.time()
-    activated = False
+
     while True:
 
         #---------------------------------------------------------------------------------
