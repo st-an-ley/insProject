@@ -10,8 +10,7 @@ import msgpack
 
 #Use the package subprocess to start streamlit in the background and receive data from the clients
 
-currentTopicSubscribedTo = None 
-
+currentVideoTopicSubscribedTo = currentAudioTopicSubscribedTo =  None 
 
 def start_streamlit():
 ##########################################################################################
@@ -60,7 +59,7 @@ def start_streamlit():
     videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople", "deviceDetection" ,"cameraOff"]
     videoSelectionUser = st.pills("Video Selection Options: ", videoSelectionOptions, selection_mode="single")
     #TODO remove following line
-    st.markdown(f"Your selected options: {videoSelectionUser}.")
+    st.markdown(f"Your selected option: {videoSelectionUser}.")
 
     placeholder_video = st.empty()
     #-------------------------------------------------
@@ -71,7 +70,7 @@ def start_streamlit():
     audioSelectionOptions = ["microphoneSignal", "volume", "whispering", "spokenWords" ,"microphoneOff"]
     audioSelectionUser = st.pills("Audio Selection Options: ", audioSelectionOptions, selection_mode="single")
     #TODO remove following line
-    st.markdown(f"Your selected options: {audioSelectionUser}.")
+    st.markdown(f"Your selected option: {audioSelectionUser}.")
 
     placeholder_audio = st.empty()
     #-------------------------------------------------
@@ -85,61 +84,61 @@ def start_streamlit():
 
     lastTime = time.time()
 
-    while True:
+    #IMPORTANT Change video topic depending on choice in GUI
+    #---------------------------------------------------------------------------------
+    #Check current video menu in streamlit GUI
+    match videoSelectionUser:
+        case "cameraFeed":
+            switch_topic_video("rawVideo")
+            #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
+            
+        case "faceRecognition":
+            switch_topic_video("diffPerson")
+            #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
+            
+        case "severalPeople":
+            switch_topic_video("sevPeople")
+            #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
+            
+        case "deviceDetection":
+            switch_topic_video("findDevice")
+            #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
+            
+        case "cameraOff":
+            switch_topic_video("cameraOff")
+            #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
+            
+    #---------------------------------------------------------------------------------
+
+    #IMPORTANT Change audio topic depending on choice in GUI
+    #---------------------------------------------------------------------------------
+    #Check current video menu in streamlit GUI
+    match audioSelectionUser:
+        case "microphoneSignal":
+            switch_topic_audio("rawAudio")
+            #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
+            
+        case "volume":
+            switch_topic_audio("loud")
+            #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
+            
+        case "whispering":
+            switch_topic_audio("whisper")
+            #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
+            
+        case "spokenWords":
+            switch_topic_audio("getWords")
+            #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
+            
+        case "microphoneOff":
+            switch_topic_audio("microphoneOff")
+            #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
+            
+    #---------------------------------------------------------------------------------
+
 ##########################################################################################
-        #IMPORTANT Change video topic depending on choice in GUI
-        #---------------------------------------------------------------------------------
-        #Check current video menu in streamlit GUI
-        match videoSelectionUser:
-            case "cameraFeed":
-                switch_topic_video("rawVideo")
-                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
-                
-            case "faceRecognition":
-                switch_topic_video("diffPerson")
-                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
-                
-            case "severalPeople":
-                switch_topic_video("sevPeople")
-                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
-                
-            case "deviceDetection":
-                switch_topic_video("findDevice")
-                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
-                
-            case "cameraOff":
-                switch_topic_video("cameraOff")
-                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
-                
-        #---------------------------------------------------------------------------------
-
-        #IMPORTANT Change audio topic depending on choice in GUI
-        #---------------------------------------------------------------------------------
-        #Check current video menu in streamlit GUI
-        match audioSelectionUser:
-            case "microphoneSignal":
-                switch_topic_audio("rawAudio")
-                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
-                
-            case "volume":
-                switch_topic_audio("loud")
-                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
-                
-            case "whispering":
-                switch_topic_audio("whisper")
-                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
-                
-            case "spokenWords":
-                switch_topic_audio("getWords")
-                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
-                
-            case "microphoneOff":
-                switch_topic_audio("microphoneOff")
-                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
-                
-        #---------------------------------------------------------------------------------
- ##########################################################################################           
-
+    while True:
+        #TODO Check if other numbers for timeout are better
         pollerSockets = dict(poller.poll(timeout=16))
 
 ##########################################################################################
@@ -162,14 +161,15 @@ def start_streamlit():
 
             #IMPORTANT Check if cheating was detected
             if topicReceived == "cheated":
-                placeholder_cheatedStatus.warning(f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}")
+                placeholder_cheatedStatus.warning(f"CHEATING DETECTED : Type: {metaData[0]}, Name: {metaData[1]}{metaData[2]}, MatNr: {metaData[3]}, Infos:{metaData[4]}")
                 #TODO Add uploading of metadata to Google Sheets
 
 
 
             #videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
             #placeholder_video.image(videoDataInputNumpyArray, channels="BGR")
-
+##########################################################################################
+            #IMPORTANT Converting image to base64 to be able to use it in html-tag in markdown  
             #base64 can only display 64 signs: A-Z, a-z, 0-9, +, /
             #Browsers/HTML can convert base64 back to bytes and display the image; No need to convert bytes to numpyArray
             imageInb64 = base64.b64encode(videoFrameBytes).decode()
@@ -196,56 +196,48 @@ def start_streamlit():
             #READ DATA AND SEPARATE IT INTO AUDIO AND CHEATING DATA
             #-------------------------------------------------
             #Get the Topic, "cheated" or specific topic
-            topicReceived = socket_video_sub.recv_string()            
+            topicReceived = socket_audio_sub.recv_string()            
             #-------------------------------------------------
 
             #Get the metaData for further processing
             #IMPORTANT msgpack.unpackb() already converts Bytes back to "normal" data
-            metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
+            metaData = msgpack.unpackb(socket_audio_sub.recv(), raw=False)
 
             #IMPORTANT The audio clients always send the chunk of raw bytes as the actual data. The data for display is stored in specialInfo[]
             proofData = socket_audio_sub.recv()
 
-            #IMPORTANT Data for display is always the same for the video clients, but different for the audio clients
-            displayDataAudio = None
-
             #IMPORTANT Check if cheating was detected
             if topicReceived == "cheated":
                 #Set topic specific cheating status in streamlit
-                placeholder_cheatedStatus.warning(f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}")
+                placeholder_cheatedStatus.warning(f"CHEATING DETECTED : Type: {metaData[0]}, Name: {metaData[1]}{metaData[2]}, MatNr: {metaData[3]}, Infos:{metaData[4]}")
                 #TODO Add uploading of metadata to Google Sheets
             
-            elif topicReceived == "rawAudio":
-                #Its the same as the proofData in this case
-                displayDataAudio = proofData
-            else:
-                #IMPORTANT Every client except "rawAudio" sends the data for display in the specialInfo[] of the metaData
-                displayDataAudio = metaData[4]
-
+            #IMPORTANT Different than with the video data, we have to separate which audio topic was used, because the 
+            # data and with that also the form of displaying it differs
 
             #TODO Determine how the specific data should be displayed in streamlit
-            #TODO For testing reason, display as text
+            #TODO For testing reason, displayed as text
             match topicReceived:
                 case "rawAudio":
-                    #TODO For testing reason, display as text
-                    placeholder_audio.text(displayDataAudio)
+                    #TODO For testing reason, displayed as text
+                    placeholder_audio.text(proofData)
 
                 case "loud":
                     oldAudioInput = np.roll(oldAudioInput, -1)
-                    oldAudioInput[-1] = displayDataAudio
+                    oldAudioInput[-1] = metaData[4][0]
                     placeholder_audio.bar_chart(oldAudioInput)
 
                 case "whisper":
-                     #TODO For testing reason, display as text
-                     placeholder_audio.text(displayDataAudio)
+                     #TODO For testing reason, displayed as text
+                     placeholder_audio.text(metaData[4][0])
 
                 case "getWords":
-                    #TODO For testing reason, display as text
-                    placeholder_audio.text(displayDataAudio)
+                    #TODO For testing reason, displayed as text
+                    placeholder_audio.text(metaData[4][0])
 
                 case "microphoneOff":
-                    #TODO For testing reason, display as text
-                    placeholder_audio.text(displayDataAudio)
+                    #TODO For testing reason, displayed as text
+                    placeholder_audio.text(metaData[4][0])
 
 
 #Functions to make it possible for streamlit to change between different topics
