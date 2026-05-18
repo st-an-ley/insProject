@@ -162,7 +162,7 @@ def start_streamlit():
 
             #IMPORTANT Check if cheating was detected
             if topicReceived == "cheated":
-                cheatingMessageStreamlit = f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}"
+                placeholder_cheatedStatus.warning(f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}")
                 #TODO Add uploading of metadata to Google Sheets
 
 
@@ -212,7 +212,7 @@ def start_streamlit():
             #IMPORTANT Check if cheating was detected
             if topicReceived == "cheated":
                 #Set topic specific cheating status in streamlit
-                placeholder_cheatedStatus(f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}")
+                placeholder_cheatedStatus.warning(f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}")
                 #TODO Add uploading of metadata to Google Sheets
             
             elif topicReceived == "rawAudio":
@@ -247,21 +247,7 @@ def start_streamlit():
                     #TODO For testing reason, display as text
                     placeholder_audio.text(displayDataAudio)
 
-            # UPDATE THE BAR-CHART BY SHIFTING EVERY VALUE BY ONE TO THE LEFT AND 
-            # UPDATING THE LAST VALUE IN THE NUMPY ARRAY 
-            #-------------------------------------------------
 
-            #-------------------------------------------------
-
-
-            #SEE FINAL RESULT OF ALL FORMER CHECKS AND UPDATE PLACEHOLDER ELEMENT
-            #-------------------------------------------------
-            if activated == False:
-                placeholder_cheatedStatus.success("No cheating detected")
-            elif activated == True:
-                placeholder_cheatedStatus.warning("Cheating detected, supervisor was informed")
-            #-------------------------------------------------
-            
 #Functions to make it possible for streamlit to change between different topics
 #-------------------------------------------------
 def switch_topic_video(newTopic):
