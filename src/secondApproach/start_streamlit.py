@@ -141,7 +141,7 @@ def start_streamlit():
  ##########################################################################################           
 
         pollerSockets = dict(poller.poll(timeout=16))
-        
+
 ##########################################################################################
         #IMPORTANT Check if data was sent on socket_video_sub
         if socket_video_sub in pollerSockets: #check the port 6001
@@ -182,7 +182,7 @@ def start_streamlit():
             currentTime = time.time()
             timePassed = currentTime-lastTime
 
-            print("Streamlit hat ", timePassed, "gebraucht")
+            print("Streamlit hat ", timePassed, "s gebraucht für frame Rendering")
             lastTime = currentTime
 ##########################################################################################
 
@@ -195,25 +195,62 @@ def start_streamlit():
 
             #READ DATA AND SEPARATE IT INTO AUDIO AND CHEATING DATA
             #-------------------------------------------------
-            audioDataBytes = socket_audio_sub.recv()
-            audioDatadB, audioCheated= struct.unpack('f?', audioDataBytes)
+            #Get the Topic, "cheated" or specific topic
+            topicReceived = socket_video_sub.recv_string()            
             #-------------------------------------------------
 
+            #Get the metaData for further processing
+            #IMPORTANT msgpack.unpackb() already converts Bytes back to "normal" data
+            metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
 
-            # CHECK ALL POSSIBLE REASONS WHICH CAN ACTIVATE THE CHEATING
-            #-------------------------------------------------
-            #CHECKING FOR BREACH OF THRESHOLD 
-            if audioCheated == True: #TODO Add further reasons
-                activated = True
-            #-------------------------------------------------
+            #IMPORTANT The audio clients always send the chunk of raw bytes as the actual data. The data for display is stored in specialInfo[]
+            proofData = socket_audio_sub.recv()
 
+            #IMPORTANT Data for display is always the same for the video clients, but different for the audio clients
+            displayDataAudio = None
+
+            #IMPORTANT Check if cheating was detected
+            if topicReceived == "cheated":
+                #Set topic specific cheating status in streamlit
+                placeholder_cheatedStatus(f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}")
+                #TODO Add uploading of metadata to Google Sheets
+            
+            elif topicReceived == "rawAudio":
+                #Its the same as the proofData in this case
+                displayDataAudio = proofData
+            else:
+                #IMPORTANT Every client except "rawAudio" sends the data for display in the specialInfo[] of the metaData
+                displayDataAudio = metaData[4]
+
+
+            #TODO Determine how the specific data should be displayed in streamlit
+            #TODO For testing reason, display as text
+            match topicReceived:
+                case "rawAudio":
+                    #TODO For testing reason, display as text
+                    placeholder_audio.text(displayDataAudio)
+
+                case "loud":
+                    oldAudioInput = np.roll(oldAudioInput, -1)
+                    oldAudioInput[-1] = displayDataAudio
+                    placeholder_audio.bar_chart(oldAudioInput)
+
+                case "whisper":
+                     #TODO For testing reason, display as text
+                     placeholder_audio.text(displayDataAudio)
+
+                case "getWords":
+                    #TODO For testing reason, display as text
+                    placeholder_audio.text(displayDataAudio)
+
+                case "microphoneOff":
+                    #TODO For testing reason, display as text
+                    placeholder_audio.text(displayDataAudio)
 
             # UPDATE THE BAR-CHART BY SHIFTING EVERY VALUE BY ONE TO THE LEFT AND 
             # UPDATING THE LAST VALUE IN THE NUMPY ARRAY 
             #-------------------------------------------------
-            oldAudioInput = np.roll(oldAudioInput, -1)
-            oldAudioInput[-1] = audioDatadB
-            placeholder_audio.bar_chart(oldAudioInput)
+
             #-------------------------------------------------
 
 
