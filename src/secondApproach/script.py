@@ -14,8 +14,12 @@ import time
 
 def main():
 
+    #Start streamlit before running the clients because streamlit now binds the ports 6001 and 6002
     streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py"], stdout = sys.stdout, stderr = sys.stderr)
+    
+    #Wait to make sure that streamlit was started 
     time.sleep(2)
+
     #Create the Objects which will send and receive data
     server= SERVER.Server()
     client_rawVideo = CLIENT.checkVideoRaw_client()

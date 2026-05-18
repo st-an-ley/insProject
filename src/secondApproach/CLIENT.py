@@ -84,7 +84,12 @@ class videoCheck_client(Client):
             #PROCESS DATA 
             #-----------------------------------------------
             #Image will be processed in any kind of way
-            #[0] : if cheating was detected, [1]: type of cheating , [2] : the actual proof as image as numpyArray
+            #IMPORTANT Every client has output of the structure: 
+            #[0]=true/false if cheated
+            #[1]=clientName to specify message in streamlit
+            #[2]=timeStamp to know the time when cheating was detected
+            #[3]=matNr to find person in google sheets
+            #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
             processedVideoOutput = self.processVideo(videoDataInputNumpyArray)
 
             #SPLIT PROCESSED OUTPUT IN META DATA AND VIDEO DATA
@@ -111,17 +116,23 @@ class videoCheck_client(Client):
                 #-----------------------------------------------
                 #Convert numpy array back to bytes to send the data
 
-                #Every video client sends his image to his specifif port (st.pills in streamlit) 
+                #Every video client sends his image to his specifif port (st.pills in streamlit)
+
+                #SEND TOPIC AS STRING
                 self.socket_video_pub.send_string(f"{self.topic}", zmq.SNDMORE)
-                #TODO send meta data 
-                self.socket_video_pub.send(videoMetaDataInBytes, zmq.SNDMORE) #SEND META DATA
-                self.socket_video_pub.send(imageDataOutputRawBytes) #SEND IMAGE
+
+                #SEND META DATA AS BYTES
+                #IMPORTANT use packb() and noch pack() 
+                self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE)
+
+                #SEND IMAGE AS BYTES
+                self.socket_video_pub.send(videoDataOutputNumpyJpgBytes.tobytes()) #SEND IMAGE
                 #-----------------------------------------------
 
                 #SEND BYTES TO "cheated" TOPIC IF CHEATING WAS DETECTED
                 #-----------------------------------------------
                 #If cheating was detected
-                if videoMetaData[0] == "cheated":
+                if "cheated" in videoMetaData[0]:
                     self.socket_video_pub.send_string("cheated", zmq.SNDMORE)
                     self.socket_video_pub.send(imageDataOutputRawBytes)
 
@@ -140,7 +151,7 @@ class videoCheck_client(Client):
 class checkVideoRaw_client(videoCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
-        self.topic = "rawVideo"
+        self.topic = "cheatedrawVideo"
     def run(self):
         videoCheck_client.run(self)
 
@@ -149,8 +160,10 @@ class checkVideoRaw_client(videoCheck_client):
     def processVideo(self, videoInput):
         dataOutput = videoInput
         #The name of the topic will show if cheating was detected 
-        outputList = [self.topic, dataOutput, ["firstNameTest", "lastNameTest", "MatNumTest"], time.time()]
-        return outputList
+        #TODO get the correct matrikel number
+        metaData = [False, self.topic, time.time(), "123456789", []]
+        videoOutput = videoInput
+        return metaData, videoOutput
         #TODO change name and matnum to real values -> from group1
 
 ############################################################################################################        
@@ -159,7 +172,7 @@ class checkVideoRaw_client(videoCheck_client):
 class checkVideoDiffPerson_client(videoCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
-        self.topic = "diffPerson"
+        self.topic = "cheateddiffPerson"
 
     def run(self):
         videoCheck_client.run(self)
@@ -179,7 +192,7 @@ class checkVideoDiffPerson_client(videoCheck_client):
 class checkVideoSevPeople_client(videoCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         videoCheck_client.__init__(self, useCase="", messagingType="SUB", protocol="tcp")
-        self.topic = "sevPeople"
+        self.topic = "cheatedsevPeople"
 
     def run(self):
         videoCheck_client.run(self)
