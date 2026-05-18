@@ -21,18 +21,11 @@ def start_streamlit():
     context = zmq.Context()
 
 
-
     #SUBSCRIBER socket for video with corresponding port
     socket_video_sub = context.socket(zmq.SUB)
     socket_video_sub.setsockopt(zmq.RCVHWM, 1)        
     socket_video_sub.bind(f"tcp://*:{videoInputPort}")
     socket_video_sub.setsockopt(zmq.SUBSCRIBE, b'')
-
-    #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated"
-    #Specific topics follow down below
-    socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
-
-
 
 
     #SUBSCRIBER socket for audio with corresponding port
@@ -40,9 +33,19 @@ def start_streamlit():
     socket_audio_sub.bind(f"tcp://*:{audioInputPort}")
     socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
-    #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated"
+
+
+    #IMPORTANT
+    #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated" on video socket
     #Specific topics follow down below
     socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
+
+
+    #IMPORTANT
+    #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated" on audio socket
+    #Specific topics follow down below
+    socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
+
 
 
     poller = zmq.Poller()
@@ -81,55 +84,67 @@ def start_streamlit():
 
     while True:
 
+        #IMPORTANT Change video topic depending on choice in GUI
+        #---------------------------------------------------------------------------------
+        #Check current video menu in streamlit GUI
+        match videoSelectionUser:
+            case "cameraFeed":
+                switch_topic_video("rawVideo")
+                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
+                
+            case "faceRecognition":
+                switch_topic_video("diffPerson")
+                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
+                
+            case "severalPeople":
+                switch_topic_video("sevPeople")
+                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
+                
+            case "deviceDetection":
+                switch_topic_video("findDevice")
+                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
+                
+            case "cameraOff":
+                switch_topic_video("cameraOff")
+                #socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
+                
+        #---------------------------------------------------------------------------------
+
+        #IMPORTANT Change audio topic depending on choice in GUI
         #---------------------------------------------------------------------------------
         #Check current video menu in streamlit GUI
         match audioSelectionUser:
             case "microphoneSignal":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
+                switch_topic_audio("rawAudio")
+                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "rawAudio")
                 
             case "volume":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
+                switch_topic_audio("loud")
+                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "loud")
                 
             case "whispering":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
+                switch_topic_audio("whisper")
+                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "whisper")
                 
             case "spokenWords":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
+                switch_topic_audio("getWords")
+                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "getWords")
                 
             case "microphoneOff":
-                socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
+                switch_topic_audio("microphoneOff")
+                #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
                 
         #---------------------------------------------------------------------------------
             
 
-        #---------------------------------------------------------------------------------
-        #Check current audio menu in streamlit GUI
-        match videoSelectionUser:
-            case "cameraFeed":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "rawVideo")
-                
-            case "faceRecognition":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "diffPerson")
-                
-            case "severalPeople":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "sevPeople")
-                
-            case "deviceDetection":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "findDevice")
-                
-            case "cameraOff":
-                socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cameraOff")
-                
-        #---------------------------------------------------------------------------------
-
-
         #topic = socket_video_sub.recv_string()
+        #TODO handle separation between "cheated" topic and specific topic
         pollerSockets = dict(poller.poll(timeout=16))
-        if socket_video_sub in pollerSockets:
+        #IMPORTANT Check if data was sent on socket_video_sub
+        if socket_video_sub in pollerSockets: #check the port 6001
 
             topic = socket_video_sub.recv_string()
             metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
-            print(metaData[0], metaData[1], metaData[2])
 
             if topic == "cheated":
                 #TODO add what to happen, when topic is cheated
@@ -156,7 +171,8 @@ def start_streamlit():
             print("Streamlit hat ", timePassed, "gebraucht")
             lastTime = currentTime
 
-        if socket_audio_sub in pollerSockets:
+        #IMPORTANT Check if data was sent on socket_audio_sub
+        if socket_audio_sub in pollerSockets: #Check the port 6002
             #Audio data is of type int16 and represents the position of the membran of the microphone
             #Every value is represented as 16 bits = 2 Bytes
             #16 bits : 65536 values from -32768 to +32767 
@@ -215,6 +231,10 @@ def switch_topic_audio(newTopic):
     currentTopicSubscribedTo = newTopic
 
 #-------------------------------------------------
+def sendCheatingToGoogleSheets(metaData):
+    pass
+#-------------------------------------------------
+
 
 def main():
     start_streamlit()
