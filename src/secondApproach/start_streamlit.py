@@ -14,6 +14,7 @@ currentTopicSubscribedTo = None
 
 
 def start_streamlit():
+##########################################################################################
     #Arguments given when calling "streamlit run start_streamlit.py x y " in script.py
     videoInputPort = 6001
     audioInputPort = 6002
@@ -33,8 +34,7 @@ def start_streamlit():
     socket_audio_sub.bind(f"tcp://*:{audioInputPort}")
     socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b'')
 
-
-
+##########################################################################################
     #IMPORTANT
     #ALWAYS LISTENING TO MESSAGES WITH TOPIC "cheated" on video socket
     #Specific topics follow down below
@@ -52,6 +52,8 @@ def start_streamlit():
     poller.register(socket_video_sub, zmq.POLLIN)
     poller.register(socket_audio_sub, zmq.POLLIN)
 
+##########################################################################################
+    #IMPORTANT Streamlit GUI
     st.title("Remote exam surveillance")
 
     #-------------------------------------------------
@@ -78,12 +80,13 @@ def start_streamlit():
 
     placeholder_cheatedStatus = st.empty()
 
+##########################################################################################
     oldAudioInput = np.zeros(100)
 
     lastTime = time.time()
 
     while True:
-
+##########################################################################################
         #IMPORTANT Change video topic depending on choice in GUI
         #---------------------------------------------------------------------------------
         #Check current video menu in streamlit GUI
@@ -135,23 +138,33 @@ def start_streamlit():
                 #socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "microphoneOff")
                 
         #---------------------------------------------------------------------------------
-            
+ ##########################################################################################           
 
-        #topic = socket_video_sub.recv_string()
-        #TODO handle separation between "cheated" topic and specific topic
         pollerSockets = dict(poller.poll(timeout=16))
+        
+##########################################################################################
         #IMPORTANT Check if data was sent on socket_video_sub
         if socket_video_sub in pollerSockets: #check the port 6001
 
-            topic = socket_video_sub.recv_string()
+            #Get the Topic, "cheated" or specific topic
+            topicReceived = socket_video_sub.recv_string()
+
+            #Get the metaData for further processing
+            #IMPORTANT msgpack.unpackb() already converts Bytes back to "normal" data
             metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
 
-            if topic == "cheated":
-                #TODO add what to happen, when topic is cheated
-                pass
+            #Get the actual frame as Bytes
+            videoFrameBytes = socket_video_sub.recv()
+
+            #Frame from Bytes to (H,W,C)
+            videoFrame = cv2.imdecode(np.frombuffer(videoFrameBytes, np.uint8), cv2.IMREAD_COLOR)
 
 
-            videoDataInputBytes = socket_video_sub.recv()
+            #IMPORTANT Check if cheating was detected
+            if topicReceived == "cheated":
+                cheatingMessageStreamlit = f"CHEATING DETECTED : Type: {metaData[1]}, Name: {metaData[2]}{metaData[3]}, MatNr: {metaData[4]}, Infos:{metaData[5]}"
+                #TODO Add uploading of metadata to Google Sheets
+
 
 
             #videoDataInputNumpyArray = cv2.imdecode(np.frombuffer(videoDataInputBytes, np.uint8), cv2.IMREAD_COLOR)
@@ -159,7 +172,7 @@ def start_streamlit():
 
             #base64 can only display 64 signs: A-Z, a-z, 0-9, +, /
             #Browsers/HTML can convert base64 back to bytes and display the image; No need to convert bytes to numpyArray
-            imageInb64 = base64.b64encode(videoDataInputBytes).decode()
+            imageInb64 = base64.b64encode(videoFrameBytes).decode()
             #Use of markdown avoids creation of react component
             placeholder_video.markdown(
                 f'<img src="data:image/jpeg;base64,{imageInb64}" style="width:100%">',
@@ -168,8 +181,10 @@ def start_streamlit():
 
             currentTime = time.time()
             timePassed = currentTime-lastTime
+
             print("Streamlit hat ", timePassed, "gebraucht")
             lastTime = currentTime
+##########################################################################################
 
         #IMPORTANT Check if data was sent on socket_audio_sub
         if socket_audio_sub in pollerSockets: #Check the port 6002
