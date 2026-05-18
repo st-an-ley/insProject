@@ -195,7 +195,7 @@ class checkVideoDiffPerson_client(videoCheck_client):
 class checkVideoSevPeople_client(videoCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         videoCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
-        self.topic = "cheatedsevPeople"
+        self.topic = "sevPeople"
 
     def run(self):
         videoCheck_client.run(self)
@@ -430,9 +430,8 @@ class checkAudioLoud_client(audioCheck_client):
 
             #TODO Find a way of how to store the audio input 
 
-        listDataCheated = [audioIndB,cheated]
-
-        return listDataCheated
+        metaData = [cheated, self.topic, time.time(), "123456789", [audioIndB]]
+        return metaData, audioInput   # audioInput als Beweis-Chunk
 
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if the person is whispering
