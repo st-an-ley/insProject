@@ -192,8 +192,9 @@ class checkVideoDiffPerson_client(videoCheck_client):
         cheated = False
         #TODO if cheated == true: cheated = True --> Make it variable and depending on the processing
         metaData = [cheated, self.topic, time.time(), "123456789", []]
-        dataOutput = videoInput
-        return dataOutput
+        #TODO Draw rectangle at detected face
+        dataOutput = cv2.rectangle(videoInput, (100,100), (200,200), (255,0,0) ,1)
+        return metaData, dataOutput
         #TODO Implement methods to check for cheating in video
 
 ############################################################################################################
@@ -315,7 +316,7 @@ class audioCheck_client(Client):
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_audio_pub = self.context.socket(zmq.PUB)  
-        self.socket_audio_pub.setsockopt(zmq.SNDHWM, self.sendHWM)
+        #self.socket_audio_pub.setsockopt(zmq.SNDHWM, self.sendHWM)
         self.socket_audio_pub.connect(f"{self.protocol}://localhost:{self.portPUB}") #6002
 
         lastTimeAudio = time.time()

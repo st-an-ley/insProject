@@ -7,7 +7,6 @@ import time
 
 def start_streamlit():
 
-    # ── Einmalige Initialisierung ─────────────────────────────────────
     if "initialized" not in st.session_state:
         context = zmq.Context()
 
@@ -29,13 +28,14 @@ def start_streamlit():
         st.session_state.oldAudioInput = np.zeros(100)
         st.session_state.currentVideoTopic = None
         st.session_state.currentAudioTopic = None
-        st.session_state.lastTime = time.time()   # ← hier, nicht außerhalb
+        st.session_state.lastTimeVideo = time.time() 
+        st.session_state.lastTimeAudio = time.time()  
         st.session_state.initialized = True
 
     socket_video_sub = st.session_state.socket_video_sub
     socket_audio_sub = st.session_state.socket_audio_sub
     poller = st.session_state.poller
-
+###########################################################################################
     st.title("Remote exam surveillance")
 
     videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople", "deviceDetection", "cameraOff"]
@@ -52,7 +52,7 @@ def start_streamlit():
 
     placeholder_audio = st.empty()
     placeholder_cheatedStatus = st.empty()
-
+###########################################################################################
     match videoSelectionUser:
         case "cameraFeed": switch_topic_video("rawVideo")
         case "faceRecognition": switch_topic_video("diffPerson")
@@ -67,10 +67,10 @@ def start_streamlit():
         case "spokenWords": switch_topic_audio("getWords")
         case "microphoneOff": switch_topic_audio("microphoneOff")
 
-
+###########################################################################################
     #st.fragment makes only this part rerun at rate of run_every
     @st.fragment(run_every=0.033)
-    def stream():
+    def streamVideo():
         pollerSockets = dict(poller.poll(timeout=16))
 
         if socket_video_sub in pollerSockets:
@@ -91,9 +91,12 @@ def start_streamlit():
             )
 
             currentTime = time.time()
-            print("Streamlit hat", currentTime - st.session_state.lastTime, "s gebraucht")
-            st.session_state.lastTime = currentTime
+            print("Streamlit hat", currentTime - st.session_state.lastTimeVideo, "s gebraucht")
+            st.session_state.lastTimeVideo = currentTime
 
+    @st.fragment(run_every=0.1)
+    def streamAudio():
+        pollerSockets = dict(poller.poll(timeout=16))
         if socket_audio_sub in pollerSockets:
             topicReceived = socket_audio_sub.recv_string()
             metaData = msgpack.unpackb(socket_audio_sub.recv(), raw=False)
@@ -115,8 +118,8 @@ def start_streamlit():
                 case "whisper" | "getWords" | "microphoneOff":
                     placeholder_audio.text(metaData[4][0])
 
-    stream()   #starting the fragment
-
+    streamVideo()   #starting the fragment
+    streamAudio()
 ###########################################################################################
 def switch_topic_video(newTopic):
     if st.session_state.currentVideoTopic == newTopic:

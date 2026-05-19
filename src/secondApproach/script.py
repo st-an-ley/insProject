@@ -23,6 +23,8 @@ def main():
     #Create the Objects which will send and receive data
     server= SERVER.Server()
     client_videoRaw = CLIENT.checkVideoRaw_client()
+    client_videoDiffPerson = CLIENT.checkVideoDiffPerson_client()
+
     client_audioRaw = CLIENT.checkAudioRaw_client()
     client_audioLoud = CLIENT.checkAudioLoud_client()
     #TODO add all the other clients
@@ -35,6 +37,8 @@ def main():
     #CREATE A PROCESS FOR THE SERVER AND EVERY SEPARATE CLIENT 
     server_process = multiprocessing.Process(target=server.run)
     client_videoRaw_process = multiprocessing.Process(target=client_videoRaw.run)
+    client_videoDiffPerson_process = multiprocessing.Process(target=client_videoDiffPerson.run)
+
     client_audioRaw_process = multiprocessing.Process(target=client_audioRaw.run)
     client_audioLoud_process = multiprocessing.Process(target=client_audioLoud.run)
 
@@ -43,6 +47,9 @@ def main():
     #Starting each process, so executing the run method of each object
     server_process.start()
     client_videoRaw_process.start()
+    client_videoDiffPerson_process.start()
+
+
     client_audioRaw_process.start()
     client_audioLoud_process.start()
 
