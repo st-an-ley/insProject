@@ -33,7 +33,10 @@ class Client(ABC):
     def run(self):
         pass
 
-
+    def getMatNr(self):
+        #TODO Get the actual MatNr from Group1
+        return "123456789"
+        
 
 ############################################################################################################
 #Subclass of Client
@@ -43,6 +46,11 @@ class videoCheck_client(Client):
         Client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.portPUB = 6001
         self.videoSendRate = 30 #Amount of frames sent per second 
+
+        #IMPORTANT Standard values for the buffer size of sending and receiving socket
+        #Are the same for every video client but could be changed depending on output of new clients
+        self.recvHWM = 1
+        self.sendHWM = 1
 
 
     #run method for this client only uses data from port 5001, so only video, no audio
@@ -54,14 +62,14 @@ class videoCheck_client(Client):
         
         #Create SUBSCRIBER socket to receive data from the Server
         self.socket_video_sub = self.context.socket(zmq.SUB)   
-        #TODO Look if topic name must be specified since different ports are used
         self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
         #f"{self.useCase}.encode('utf-8')"
-        self.socket_video_sub.setsockopt(zmq.RCVHWM, 1)        
+        self.socket_video_sub.setsockopt(zmq.RCVHWM, self.recvHWM)        
         self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}") #5001
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_video_pub = self.context.socket(zmq.PUB)  
+        self.socket_video_pub.setsockopt(zmq.SNDHWM, self.sendHWM)  
         self.socket_video_pub.connect(f"{self.protocol}://localhost:{self.portPUB}") #6001
 
         lastTimeVideo = time.time()
@@ -241,8 +249,21 @@ class checkVideoCameraOff_client(videoCheck_client):
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processVideo(self, videoInput):
         #TODO change dataOutput to correct data
+        #TODO Find a way to access camera status without opening the camera in every run
+        #camera = cv2.VideoCapture(0)
+
+        #Function to check if camera is available
+        #True if available, False if not available
+        #cameraOpen = camera.isOpened()
+        
+        #IMPORTANT False = camera is not off
+        #IMPORTANT True = camera is off -> possible cheating
+        #if cameraOpen: metaData = [False, self.topic, time.time(), "123456789", ["Camera is available."]]
+        #else: metaData = [True, self.topic, time.time(), "123456789", ["Camera not available."]]
+        #TODO delete following line
+        metaData = [True, self.topic, time.time(), "123456789", ["Camera not available."]]
         dataOutput = videoInput
-        return dataOutput
+        return metaData, dataOutput
         #TODO Implement methods to check for cheating in video
 
 ############################################################################################################
@@ -272,6 +293,11 @@ class audioCheck_client(Client):
         self.portPUB = 6002
         self.audioSendRate = 10 #Amount of data samples sent per second
 
+        #IMPORTANT Standard values for the buffer size of sending and receiving socket
+        #Are different depending on subclass but should be higher than 1 for most use cases since audio is connected over time (different than to frames, atleast for our usercases)
+        self.recvHWM = 1
+        self.sendHWM = 1 
+
     #run method for this client only uses data from port 5002, so only audio, no video
     #Every client processing audio will need to receive data from port 5002
     def run(self):
@@ -284,10 +310,12 @@ class audioCheck_client(Client):
         self.socket_audio_sub = self.context.socket(zmq.SUB)   
         #TODO Look if topic name must be specified since different ports are used
         self.socket_audio_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
+        self.socket_audio_sub.setsockopt(zmq.RCVHWM, self.recvHWM)
         self.socket_audio_sub.connect(f"{self.protocol}://localhost:{self.audioSUBport}") #5002
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_audio_pub = self.context.socket(zmq.PUB)  
+        self.socket_audio_pub.setsockopt(zmq.SNDHWM, self.sendHWM)
         self.socket_audio_pub.connect(f"{self.protocol}://localhost:{self.portPUB}") #6002
 
         lastTimeAudio = time.time()
@@ -366,6 +394,11 @@ class checkAudioRaw_client(audioCheck_client):
         audioCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.topic = "rawAudio"
 
+        #Can stay at 1 because data should be as realtime as possible; Helps for performance
+        self.sendHWM = 1
+        self.recvHWM = 1
+        
+
     def run(self):
         audioCheck_client.run(self)
     
@@ -383,6 +416,10 @@ class checkAudioLoud_client(audioCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         audioCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.topic = "loud"
+        
+        #Can stay at 1 because volume is independent on past data; Helps for performance
+        self.sendHWM = 1
+        self.recvHWM = 1
 
         # #Using OpenAIs Neural Network whisper to extract words from recorded samples
         # #Loading model; Chosing "base" because it is small enough to run without GPU
@@ -396,8 +433,6 @@ class checkAudioLoud_client(audioCheck_client):
 
     def run(self):
         audioCheck_client.run(self)
-        self.storageForWhisper = np.roll(self.storageForWhisper, -1)
-        self.storageForWhisper[-1] = audioDatadB
     
     #Overwrites the methods from the parent class; Will be automatically called when executed on child class
     def processAudio(self, audioInput):
@@ -430,8 +465,8 @@ class checkAudioLoud_client(audioCheck_client):
 
             #TODO Find a way of how to store the audio input 
 
-        metaData = [cheated, self.topic, time.time(), "123456789", [audioIndB]]
-        return metaData, audioInput   # audioInput als Beweis-Chunk
+        metaData = [bool(cheated), self.topic, time.time(), "123456789", [float(audioIndB)]]
+        return metaData, audioInput   # audioInput as chunk for proof, data for display in specialInfo[]
 
 ############################################################################################################
 #Specifif use case for processing the audio input, in this case to check if the person is whispering
@@ -439,6 +474,12 @@ class checkAudioWhisper_client(audioCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         audioCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.topic = "whisper"
+
+        # [ 20.000 f/s : 512 f/call = 39,0625 call/s ] would have to be completed
+        # [39,0625 call/s * 10s = 390,625 call ] 10s as an estimation for time of processing
+        # 110 more for safety
+        self.recvHWM = 500
+        self.sendHWM = 500
 
     def run(self):
         audioCheck_client.run(self)
@@ -454,6 +495,10 @@ class checkAudioMicOff_client(audioCheck_client):
         audioCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.topic = "microphoneOff"
 
+        #IMPORTANT Should be as realtime as possible to see changes as quick as possible
+        self.recvHWM = 1 
+        self.sendHWM = 1 
+
     def run(self):
         audioCheck_client.run(self)
     
@@ -467,6 +512,12 @@ class checkAudioGetWords_client(audioCheck_client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         audioCheck_client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.topic = "getWords"
+
+        # [ 20.000 f/s : 512 f/call = 39,0625 call/s ] would have to be completed
+        # [39,0625 call/s * 10s = 390,625 call ] 10s as an estimation for time of processing
+        # 110 more for safety
+        self.recvHWM = 500
+        self.sendHWM = 500
 
     def run(self):
         audioCheck_client.run(self)

@@ -17,6 +17,8 @@ def start_streamlit():
         st.session_state.socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
 
         st.session_state.socket_audio_sub = context.socket(zmq.SUB)
+        #TODO Check if next line makes sense
+        st.session_state.socket_audio_sub.setsockopt(zmq.RCVHWM, 1)
         st.session_state.socket_audio_sub.bind("tcp://*:6002")
         st.session_state.socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, "cheated")
 
@@ -30,19 +32,16 @@ def start_streamlit():
         st.session_state.lastTime = time.time()   # ← hier, nicht außerhalb
         st.session_state.initialized = True
 
-    # ── Kurzaliase ────────────────────────────────────────────────────
     socket_video_sub = st.session_state.socket_video_sub
     socket_audio_sub = st.session_state.socket_audio_sub
-    poller           = st.session_state.poller
-    # ← KEINE poller.register() hier
+    poller = st.session_state.poller
 
-    # ── GUI (stabil, rerunt nicht mit Fragment) ───────────────────────
     st.title("Remote exam surveillance")
 
     videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople", "deviceDetection", "cameraOff"]
     videoSelectionUser = st.pills("Video:", videoSelectionOptions,
                                    selection_mode="single",
-                                   key="video_selection")   # ← key sichert Auswahl über Fragment-Reruns
+                                   key="video_selection")   
 
     placeholder_video = st.empty()
 
@@ -54,7 +53,6 @@ def start_streamlit():
     placeholder_audio = st.empty()
     placeholder_cheatedStatus = st.empty()
 
-    # ── Topic-Wechsel (bei Pill-Klick) ───────────────────────────────
     match videoSelectionUser:
         case "cameraFeed": switch_topic_video("rawVideo")
         case "faceRecognition": switch_topic_video("diffPerson")
@@ -69,16 +67,16 @@ def start_streamlit():
         case "spokenWords": switch_topic_audio("getWords")
         case "microphoneOff": switch_topic_audio("microphoneOff")
 
-    # ── Fragment: nur dieser Block rerunt alle 50ms ───────────────────
-    # Placeholders werden per Closure von außen mitgenommen
-    @st.fragment(run_every=0.005)
+
+    #st.fragment makes only this part rerun at rate of run_every
+    @st.fragment(run_every=0.033)
     def stream():
         pollerSockets = dict(poller.poll(timeout=16))
 
         if socket_video_sub in pollerSockets:
             topicReceived = socket_video_sub.recv_string()
-            metaData      = msgpack.unpackb(socket_video_sub.recv(), raw=False)
-            videoBytes    = socket_video_sub.recv()
+            metaData = msgpack.unpackb(socket_video_sub.recv(), raw=False)
+            videoBytes = socket_video_sub.recv()
 
             if topicReceived == "cheated":
                 placeholder_cheatedStatus.warning(
@@ -98,8 +96,8 @@ def start_streamlit():
 
         if socket_audio_sub in pollerSockets:
             topicReceived = socket_audio_sub.recv_string()
-            metaData      = msgpack.unpackb(socket_audio_sub.recv(), raw=False)
-            proofData     = socket_audio_sub.recv()
+            metaData = msgpack.unpackb(socket_audio_sub.recv(), raw=False)
+            proofData = socket_audio_sub.recv()
 
             if topicReceived == "cheated":
                 placeholder_cheatedStatus.warning(
@@ -117,10 +115,9 @@ def start_streamlit():
                 case "whisper" | "getWords" | "microphoneOff":
                     placeholder_audio.text(metaData[4][0])
 
-    stream()   # ← startet Fragment, kein st.rerun() mehr nötig
+    stream()   #starting the fragment
 
-
-# ── Switch-Funktionen ─────────────────────────────────────────────────
+###########################################################################################
 def switch_topic_video(newTopic):
     if st.session_state.currentVideoTopic == newTopic:
         return
@@ -136,9 +133,14 @@ def switch_topic_audio(newTopic):
         st.session_state.socket_audio_sub.setsockopt_string(zmq.UNSUBSCRIBE, st.session_state.currentAudioTopic)
     st.session_state.socket_audio_sub.setsockopt_string(zmq.SUBSCRIBE, newTopic)
     st.session_state.currentAudioTopic = newTopic
+###########################################################################################
 
 def sendCheatingToGoogleSheets(metaData):
     pass
+
+def getMatNr():
+    #TODO Use info from Group1 to get the actual MatNr
+    return "123456789"
 
 def main():
     start_streamlit()

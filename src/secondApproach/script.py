@@ -22,8 +22,9 @@ def main():
 
     #Create the Objects which will send and receive data
     server= SERVER.Server()
-    client_rawVideo = CLIENT.checkVideoRaw_client()
-    client_rawAudio = CLIENT.checkAudioRaw_client()
+    client_videoRaw = CLIENT.checkVideoRaw_client()
+    client_audioRaw = CLIENT.checkAudioRaw_client()
+    client_audioLoud = CLIENT.checkAudioLoud_client()
     #TODO add all the other clients
 
     #Use package multiprocessing to run the run-method of each object in a different process
@@ -33,24 +34,27 @@ def main():
     #target=x.run determines that in each process the run method of the object is executed after being started
     #CREATE A PROCESS FOR THE SERVER AND EVERY SEPARATE CLIENT 
     server_process = multiprocessing.Process(target=server.run)
-    client_rawVideo_process = multiprocessing.Process(target=client_rawVideo.run)
-    client_rawAudio_process = multiprocessing.Process(target=client_rawAudio.run)
+    client_videoRaw_process = multiprocessing.Process(target=client_videoRaw.run)
+    client_audioRaw_process = multiprocessing.Process(target=client_audioRaw.run)
+    client_audioLoud_process = multiprocessing.Process(target=client_audioLoud.run)
+
 
 
     #Starting each process, so executing the run method of each object
     server_process.start()
-    client_rawVideo_process.start()
-    client_rawAudio_process.start()
+    client_videoRaw_process.start()
+    client_audioRaw_process.start()
+    client_audioLoud_process.start()
 
     #Starting streamlit as a program by using the package subprocess
-    print("video client output port", client_rawVideo.portPUB)
-    print("audio client output port", client_rawAudio.portPUB)
+    print("video client output port", client_videoRaw.portPUB)
+    print("audio client output port", client_audioRaw.portPUB)
     
     
     print("main process id", os.getpid())
     print("Server Process id", server_process.pid)
-    print("Client Video Process id", client_rawVideo_process.pid)
-    print("Client Audio Process id", client_rawAudio_process.pid)
+    print("Client Video Process id", client_videoRaw_process.pid)
+    print("Client Audio Process id", client_audioRaw_process.pid)
     #print("Streamlit process id", subprocess.check_output(["pidof","streamlit"]))
 
     streamlit.wait()

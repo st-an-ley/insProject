@@ -52,10 +52,12 @@ class Server:
         #EVERY CLIENT RECEIVES THE DATA OVER THOSE TOPICS
         #PUBLISHER socket for sending video feed
         self.socket_pub_video = self.context.socket(zmq.PUB)
+        self.socket_pub_video.setsockopt(zmq.SNDHWM, 1)
         self.socket_pub_video.bind("tcp://*:5001")
 
         #PUBLISHER socket for sending audio feed
         self.socket_pub_audio = self.context.socket(zmq.PUB)
+        self.socket_pub_audio.setsockopt(zmq.SNDHWM, 1)
         self.socket_pub_audio.bind("tcp://*:5002")
 
         #Counter to check number of send data
