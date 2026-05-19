@@ -37,7 +37,8 @@ def start_streamlit():
     poller = st.session_state.poller
 ###########################################################################################
     st.title("Remote exam surveillance")
-
+    placeholder_cheatedStatus = st.empty()
+    placeholder_cheatedStatus.success("No cheating detected.")
     videoSelectionOptions = ["cameraFeed", "faceRecognition", "severalPeople", "deviceDetection", "cameraOff"]
     videoSelectionUser = st.pills("Video:", videoSelectionOptions,
                                    selection_mode="single",
@@ -51,21 +52,27 @@ def start_streamlit():
                                    key="audio_selection")
 
     placeholder_audio = st.empty()
-    placeholder_cheatedStatus = st.empty()
+    
 ###########################################################################################
-    match videoSelectionUser:
-        case "cameraFeed": switch_topic_video("rawVideo")
-        case "faceRecognition": switch_topic_video("diffPerson")
-        case "severalPeople": switch_topic_video("sevPeople")
-        case "deviceDetection": switch_topic_video("findDevice")
-        case "cameraOff": switch_topic_video("cameraOff")
+    if videoSelectionUser != None:
+        match videoSelectionUser:
+            case "cameraFeed": switch_topic_video("rawVideo")
+            case "faceRecognition": switch_topic_video("diffPerson")
+            case "severalPeople": switch_topic_video("sevPeople")
+            case "deviceDetection": switch_topic_video("findDevice")
+            case "cameraOff": switch_topic_video("cameraOff")
+    else:
+        placeholder_video.text("")
 
-    match audioSelectionUser:
-        case "microphoneSignal": switch_topic_audio("rawAudio")
-        case "volume": switch_topic_audio("loud")
-        case "whispering": switch_topic_audio("whisper")
-        case "spokenWords": switch_topic_audio("getWords")
-        case "microphoneOff": switch_topic_audio("microphoneOff")
+    if audioSelectionUser != None:
+        match audioSelectionUser:
+            case "microphoneSignal": switch_topic_audio("rawAudio")
+            case "volume": switch_topic_audio("loud")
+            case "whispering": switch_topic_audio("whisper")
+            case "spokenWords": switch_topic_audio("getWords")
+            case "microphoneOff": switch_topic_audio("microphoneOff")
+    else:
+        placeholder_audio.text("")
 
 ###########################################################################################
     #st.fragment makes only this part rerun at rate of run_every

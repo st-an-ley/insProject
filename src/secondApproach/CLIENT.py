@@ -316,7 +316,7 @@ class audioCheck_client(Client):
 
         #Create PUBLISHER socket to send data to Streamlit
         self.socket_audio_pub = self.context.socket(zmq.PUB)  
-        #self.socket_audio_pub.setsockopt(zmq.SNDHWM, self.sendHWM)
+        self.socket_audio_pub.setsockopt(zmq.SNDHWM, self.sendHWM)
         self.socket_audio_pub.connect(f"{self.protocol}://localhost:{self.portPUB}") #6002
 
         lastTimeAudio = time.time()
@@ -348,41 +348,41 @@ class audioCheck_client(Client):
             #-----------------------------------------------
 
 
-            if time.time() - lastTimeAudio > 1/self.audioSendRate:
+            #if time.time() - lastTimeAudio > 1/self.audioSendRate:
                 
-                #AUdio will be processed in any kind of way
-                #IMPORTANT Every client has output of the structure: 
-                #[0]=true/false if cheated
-                #[1]=clientName to specify message in streamlit
-                #[2]=timeStamp to know the time when cheating was detected
-                #[3]=matNr to find person in google sheets
-                #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
+            #AUdio will be processed in any kind of way
+            #IMPORTANT Every client has output of the structure: 
+            #[0]=true/false if cheated
+            #[1]=clientName to specify message in streamlit
+            #[2]=timeStamp to know the time when cheating was detected
+            #[3]=matNr to find person in google sheets
+            #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
 
-                audioMetaData, audioChunk = self.processAudio(audioDataInputBytes) 
+            audioMetaData, audioChunk = self.processAudio(audioDataInputBytes) 
 
 
-                #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
-                #-----------------------------------------------
-                #IMPORTANT Send topic as string
-                self.socket_audio_pub.send_string(f"{self.topic}", zmq.SNDMORE)
-                #IMPORTANT Send meta data for audio
+            #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
+            #-----------------------------------------------
+            #IMPORTANT Send topic as string
+            self.socket_audio_pub.send_string(f"{self.topic}", zmq.SNDMORE)
+            #IMPORTANT Send meta data for audio
+            self.socket_audio_pub.send(msgpack.packb(audioMetaData), zmq.SNDMORE)
+            #IMPORTANT Send audio chunk
+            self.socket_audio_pub.send(audioChunk)
+            #-----------------------------------------------
+
+            #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
+            #-----------------------------------------------
+            #IMPORTANT If cheating was detected, send data also to topic "cheated"
+            if audioMetaData[0] == True:
+                #Send to topic "cheated"
+                self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
                 self.socket_audio_pub.send(msgpack.packb(audioMetaData), zmq.SNDMORE)
-                #IMPORTANT Send audio chunk
                 self.socket_audio_pub.send(audioChunk)
-                #-----------------------------------------------
 
-                #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
-                #-----------------------------------------------
-                #IMPORTANT If cheating was detected, send data also to topic "cheated"
-                if audioMetaData[0] == True:
-                    #Send to topic "cheated"
-                    self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
-                    self.socket_audio_pub.send(msgpack.packb(audioMetaData), zmq.SNDMORE)
-                    self.socket_audio_pub.send(audioChunk)
+            #-----------------------------------------------
 
-                #-----------------------------------------------
-
-                lastTimeAudio = time.time()
+            lastTimeAudio = time.time()
         
     @abstractmethod
     def processAudio(self, audioInput):
