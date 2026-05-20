@@ -7,6 +7,7 @@ import time
 import altair as alt
 import pandas as pd
 
+
 #FILEINFO : This file only handles incoming data and displays it on the GUI. No processing, no sending data to google sheets
 def start_streamlit():
 
@@ -92,7 +93,7 @@ def start_streamlit():
 
 ###########################################################################################
     #st.fragment makes only this part rerun at rate of run_every
-    @st.fragment(run_every=0.05) #1/30 
+    @st.fragment(run_every=0.033) #1/30 
     def streamVideo():
         #IMPORTANT Check if no Pill for video was chosen; Then the poller should not even poll from the socket 
         if st.session_state.currentVideoTopic is None:
@@ -118,12 +119,12 @@ def start_streamlit():
                 #IMPORTANT If topic is "cheated", client only sends 2 values, otherwise 3. So one more has to be received
                 videoBytes = socket_video_sub.recv()
                 #timeEncodeAndMarkdownBefore = time.time()
-                #b64 = base64.b64encode(videoBytes).decode()
-                placeholder_video.image(videoBytes)
-                # placeholder_video.markdown(
-                #     f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
-                #     unsafe_allow_html=True
-                # )
+                b64 = base64.b64encode(videoBytes).decode()
+                #placeholder_video.image(videoBytes)
+                placeholder_video.markdown(
+                    f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
+                    unsafe_allow_html=True
+                )
                 timeEncodeAndMarkdownAfter = time.time()
 
 
