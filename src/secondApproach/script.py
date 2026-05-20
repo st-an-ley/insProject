@@ -13,9 +13,8 @@ import time
 #Start streamlit in the background by using the package Subprocess to run a python script from within another python script
 
 def main():
-
-    #Start streamlit before running the clients because streamlit now binds the ports 6001 and 6002
-    
+    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py"], stdout = sys.stdout, stderr = sys.stderr)
+#############################################################################################
     #Wait to make sure that streamlit was started 
     #Create the Objects which will send and receive data
     server= SERVER.Server()
@@ -29,7 +28,7 @@ def main():
     #Use package multiprocessing to run the run-method of each object in a different process
     #Like this, they can all run at the same time and asynchronous
     #target and args as arguments for Process()
-
+#############################################################################################
     #target=x.run determines that in each process the run method of the object is executed after being started
     #CREATE A PROCESS FOR THE SERVER AND EVERY SEPARATE CLIENT 
     server_process = multiprocessing.Process(target=server.run)
@@ -40,7 +39,7 @@ def main():
     client_audioLoud_process = multiprocessing.Process(target=client_audioLoud.run)
 
 
-
+#############################################################################################
     #Starting each process, so executing the run method of each object
     server_process.start()
     client_videoRaw_process.start()
@@ -49,9 +48,9 @@ def main():
 
     client_audioRaw_process.start()
     client_audioLoud_process.start()
+#############################################################################################    
 
-    streamlit = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "src/secondApproach/start_streamlit.py"], stdout = sys.stdout, stderr = sys.stderr)
-
+#############################################################################################
 
 
     #Starting streamlit as a program by using the package subprocess

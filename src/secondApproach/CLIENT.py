@@ -50,7 +50,7 @@ class videoCheck_client(Client):
         #IMPORTANT Standard values for the buffer size of sending and receiving socket
         #Are the same for every video client but could be changed depending on output of new clients
         self.recvHWM = 1
-        self.sendHWM = 1000
+        self.sendHWM = 1
 
 
     #run method for this client only uses data from port 5001, so only video, no audio
@@ -62,8 +62,8 @@ class videoCheck_client(Client):
         
         #Create SUBSCRIBER socket to receive data from the Server
         self.socket_video_sub = self.context.socket(zmq.SUB)   
-        self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
-        #f"{self.useCase}.encode('utf-8')"
+        self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") 
+        
         self.socket_video_sub.setsockopt(zmq.RCVHWM, self.recvHWM)        
         self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}") #5001
 
@@ -140,8 +140,11 @@ class videoCheck_client(Client):
                 if videoMetaData[0] == True:
                     #Send to topic "cheated"
                     self.socket_video_pub.send_string("cheated", zmq.SNDMORE)
-                    self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE)
-                    self.socket_video_pub.send(videoDataOutputNumpyJpgBytes.tobytes()) #SEND IMAGE
+                    self.socket_video_pub.send(msgpack.packb(videoMetaData))
+                    
+                    #self.sendProofToGoogleSheets(videoDataOutputNumpyJpgBytes.tobytes())
+                    #streamlit doesnt need the proof in form of an image, it only needs to be sent to google sheets
+                    #self.socket_video_pub.send(videoDataOutputNumpyJpgBytes.tobytes()) #SEND IMAGE
 
                 #-----------------------------------------------
 
@@ -377,12 +380,14 @@ class audioCheck_client(Client):
                 if audioMetaData[0] == True:
                     #Send to topic "cheated"
                     self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
-                    self.socket_audio_pub.send(msgpack.packb(audioMetaData), zmq.SNDMORE)
-                    self.socket_audio_pub.send(audioChunk)
+                    self.socket_audio_pub.send(msgpack.packb(audioMetaData))
+
+                    #Streamlit doesnt need the proof as audio chunk, only the message for google sheets
+                    #self.socket_audio_pub.send(audioChunk)
 
                 #-----------------------------------------------
 
-            lastTimeAudio = time.time()
+                lastTimeAudio = time.time()
         
     @abstractmethod
     def processAudio(self, audioInput):
@@ -419,8 +424,8 @@ class checkAudioLoud_client(audioCheck_client):
         self.topic = "loud"
         
         #Can stay at 1 because volume is independent on past data; Helps for performance
-        self.sendHWM = 1000
-        self.recvHWM = 1000
+        self.sendHWM = 1
+        self.recvHWM = 1
 
         # #Using OpenAIs Neural Network whisper to extract words from recorded samples
         # #Loading model; Chosing "base" because it is small enough to run without GPU
