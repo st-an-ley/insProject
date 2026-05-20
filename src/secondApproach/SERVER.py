@@ -14,14 +14,14 @@ class Server:
 
     def run(self):
         #Settings for handling with pyAudio
-        self.chunk = 2000  # Record in chunks of 1024 samples
+        self.chunk = 512  # Record in chunks of 1024 samples
         self.sample_format = pyaudio.paInt16  # 16 bits per sample
         self.channels = 1
         self.fs = 20000  # Record at 20000 samples per second
 
         #Settings for controlling the amount of input
         self.videoInputRate = 30 # Number of video inputs per second
-        self.audioInputRate = 10 # Number of audio inputs per second
+        self.audioInputRate = 512 # Number of audio inputs per second
 
 
         #Settings for controlling the amount of output

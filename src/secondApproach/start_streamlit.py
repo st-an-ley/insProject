@@ -4,7 +4,10 @@ import numpy as np
 import base64
 import msgpack
 import time
+import altair as alt
+import pandas as pd
 
+#FILEINFO : This file only handles incoming data and displays it on the GUI. No processing, no sending data to google sheets
 def start_streamlit():
 
     if "initialized" not in st.session_state:
@@ -38,59 +41,46 @@ def start_streamlit():
 
     socket_video_sub = st.session_state.socket_video_sub
     socket_audio_sub = st.session_state.socket_audio_sub
-    poller = st.session_state.poller
 ###########################################################################################
     st.title("Remote exam surveillance")
     placeholder_cheatedStatus = st.empty()
     placeholder_cheatedStatus.success("No cheating detected.")
-    videoSelectionUser = st.pills("Video:", st.session_state.videoSelectionOptions,
-                                   selection_mode="single",
-                                   key="video_selection")   
-
-    placeholder_video = st.empty()
-
-    audioSelectionOptions = ["microphoneSignal", "volume", "whispering", "spokenWords", "microphoneOff"]
-    audioSelectionUser = st.pills("Audio:", st.session_state.audioSelectionOptions,
-                                   selection_mode="single",
-                                   key="audio_selection")
-
-    placeholder_audio = st.empty()
     
 ###########################################################################################
     #IMPORTANT st.fragment() makes it possible to run code only when a streamlit widget inside of it changes 
 
     #IMPORTANT Only runs, when user has chosen a different video pill
     @st.fragment()
-    def videoPills_reaction():
-            videoSelectionUser = st.pills("Video:",st.session_state.videoSelectionOptions,selection_mode="single",key="video_selection")
+    def videoPillsTopicReaction():
+            videoSelectionUser = st.pills("Video:",st.session_state.videoSelectionOptions,selection_mode="single",key="video_selection_fragment")
             if videoSelectionUser is None:
-                unsubscribe_video()
+                unsubscribeVideoTopic()
             else:
                 match videoSelectionUser:
-                    case "cameraFeed": switch_topic_video("rawVideo")
-                    case "faceRecognition": switch_topic_video("diffPerson")
-                    case "severalPeople": switch_topic_video("sevPeople")
-                    case "deviceDetection": switch_topic_video("findDevice")
-                    case "cameraOff": switch_topic_video("cameraOff")
+                    case "cameraFeed": switchTopicVideo("rawVideo")
+                    case "faceRecognition": switchTopicVideo("diffPerson")
+                    case "severalPeople": switchTopicVideo("sevPeople")
+                    case "deviceDetection": switchTopicVideo("findDevice")
+                    case "cameraOff": switchTopicVideo("cameraOff")
 
-    videoPills_reaction()
+    videoPillsTopicReaction()
     placeholder_video=st.empty()
 
     #IMPORTANT Only runs, when user has chosen a different video pill
     @st.fragment()
-    def audioPills_reaction():
-            audioSelectionUser = st.pills("Video:",st.session_state.audioSelectionOptions,selection_mode="single",key="audio_selection")
+    def audioPillsTopicReaction():
+            audioSelectionUser = st.pills("Video:",st.session_state.audioSelectionOptions,selection_mode="single",key="audio_selection_fragment")
             if audioSelectionUser is None:
-                unsubscribe_audio()
+                unsubscribeAudioTopic()
             else:
                 match audioSelectionUser:
-                    case "microphoneSignal": switch_topic_audio("rawAudio")
-                    case "volume":           switch_topic_audio("loud")
-                    case "whispering":       switch_topic_audio("whisper")
-                    case "spokenWords":      switch_topic_audio("getWords")
-                    case "microphoneOff":    switch_topic_audio("microphoneOff")
+                    case "microphoneSignal": switchTopicAudio("rawAudio")
+                    case "volume":           switchTopicAudio("loud")
+                    case "whispering":       switchTopicAudio("whisper")
+                    case "spokenWords":      switchTopicAudio("getWords")
+                    case "microphoneOff":    switchTopicAudio("microphoneOff")
 
-    audioPills_reaction()
+    audioPillsTopicReaction()
     placeholder_audio=st.empty()
 
 ###########################################################################################
@@ -98,9 +88,15 @@ def start_streamlit():
 
 ###########################################################################################
     #st.fragment makes only this part rerun at rate of run_every
-    @st.fragment(run_every=0.033)
+    @st.fragment(run_every=0.05)
     def streamVideo():
-        pollerSockets = dict(poller.poll(timeout=16))
+        #IMPORTANT Check if no Pill for video was chosen; Then the poller should not even poll from the socket 
+        if st.session_state.currentVideoTopic is None:
+            placeholder_video.empty()
+            return
+
+        #Check if data was published to video socket by polling the poller 
+        pollerSockets = dict(st.session_state.poller.poll(timeout=10))
 
         if socket_video_sub in pollerSockets:
             topicReceived = socket_video_sub.recv_string()
@@ -112,20 +108,25 @@ def start_streamlit():
                     f"CHEATING DETECTED: Type: {metaData[1]}, "
                     f"Time: {metaData[2]}, MatNr: {metaData[3]}, Infos: {metaData[4]}"
                 )
+            else:
+                b64 = base64.b64encode(videoBytes).decode()
+                placeholder_video.markdown(
+                    f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
+                    unsafe_allow_html=True
+                )
 
-            b64 = base64.b64encode(videoBytes).decode()
-            placeholder_video.markdown(
-                f'<img src="data:image/jpeg;base64,{b64}" style="width:100%">',
-                unsafe_allow_html=True
-            )
+                currentTime = time.time()
+                print("VIDEO hat", currentTime - st.session_state.lastTimeVideo, "s gebraucht")
+                st.session_state.lastTimeVideo = currentTime
 
-            currentTime = time.time()
-            print("Streamlit hat", currentTime - st.session_state.lastTimeVideo, "s gebraucht")
-            st.session_state.lastTimeVideo = currentTime
-
-    @st.fragment(run_every=0.1)
+    @st.fragment(run_every=0.05)
     def streamAudio():
-        pollerSockets = dict(poller.poll(timeout=16))
+        #IMPORTANT Check if no Pill for audio was chosen; Then the poller should not even poll from the socket 
+        if st.session_state.currentAudioTopic is None:
+            placeholder_audio.empty()
+            return
+
+        pollerSockets = dict(st.session_state.poller.poll(timeout=30))
         if socket_audio_sub in pollerSockets:
             topicReceived = socket_audio_sub.recv_string()
             metaData = msgpack.unpackb(socket_audio_sub.recv(), raw=False)
@@ -136,23 +137,40 @@ def start_streamlit():
                     f"CHEATING DETECTED: Type: {metaData[1]}, "
                     f"Time: {metaData[2]}, MatNr: {metaData[3]}, Infos: {metaData[4]}"
                 )
-            
-            match topicReceived:
-                case "rawAudio":
-                    placeholder_audio.text(proofData)
-                case "loud":
-                    st.session_state.oldAudioInput = np.roll(st.session_state.oldAudioInput, -1)
-                    st.session_state.oldAudioInput[-1] = metaData[4][0]
-                    placeholder_audio.bar_chart(st.session_state.oldAudioInput)
-                case "whisper" | "getWords" | "microphoneOff":
-                    placeholder_audio.text(metaData[4][0])
 
-    streamVideo()   #starting the fragment
-    streamAudio()
+            else:
+                match topicReceived:
+                    case "rawAudio":
+                        placeholder_audio.text(proofData)
+                    case "loud":
+                        st.session_state.oldAudioInput = np.roll(st.session_state.oldAudioInput, -1)
+                        st.session_state.oldAudioInput[-1] = metaData[4][0]
+
+
+                        df = pd.DataFrame({"dB": st.session_state.oldAudioInput})
+                        chart = alt.Chart(df.reset_index()).mark_bar().encode(
+                            x=alt.X("index:O", axis=None),
+                            y=alt.Y("dB:Q", scale=alt.Scale(domain=[0, 120]))  # fester Bereich 0–120 dB
+                        ).properties(height=200)
+
+                        placeholder_audio.altair_chart(chart, width='stretch')
+                        placeholder_audio.bar_chart(st.session_state.oldAudioInput)
+
+
+
+                    case "whisper" | "getWords" | "microphoneOff":
+                        placeholder_audio.text(metaData[4][0])
+            
+            currentTime = time.time()
+            print("AUDIO hat", currentTime - st.session_state.lastTimeAudio, "s gebraucht")
+            st.session_state.lastTimeAudio = currentTime
+
+    streamVideo()   #starting the video fragment
+    streamAudio()   #starting the audio fragment
 ###########################################################################################
 #IMPORTANT Change between topics when chosing a different pill
 
-def switch_topic_video(newTopic):
+def switchTopicVideo(newTopic):
     if st.session_state.currentVideoTopic == newTopic:
         return
     if st.session_state.currentVideoTopic is not None:
@@ -160,7 +178,7 @@ def switch_topic_video(newTopic):
     st.session_state.socket_video_sub.setsockopt_string(zmq.SUBSCRIBE, newTopic)
     st.session_state.currentVideoTopic = newTopic
 
-def switch_topic_audio(newTopic):
+def switchTopicAudio(newTopic):
     if st.session_state.currentAudioTopic == newTopic:
         return
     if st.session_state.currentAudioTopic is not None:
@@ -169,12 +187,12 @@ def switch_topic_audio(newTopic):
     st.session_state.currentAudioTopic = newTopic
 ###########################################################################################
 #IMPORTANT Displaying nothing when same pill gets pressed when already activated
-def unsubscribe_video():
+def unsubscribeVideoTopic():
     if st.session_state.currentVideoTopic != None:
         st.session_state.socket_video_sub.setsockopt_string(zmq.UNSUBSCRIBE, st.session_state.currentVideoTopic)
         st.session_state.currentVideoTopic = None
 
-def unsubscribe_audio():
+def unsubscribeAudioTopic():
     if st.session_state.currentAudioTopic != None:
         st.session_state.socket_audio_sub.setsockopt_string(zmq.UNSUBSCRIBE, st.session_state.currentAudioTopic)
         st.session_state.currentAudioTopic = None    
