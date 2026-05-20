@@ -95,9 +95,27 @@ class Server:
                 self.socket_pub_audio.send(audioInput)
                 lastTimeAudio=time.time()
 
+
+
+            #Display camera input with opencv
+            #cv2.imshow("CameraInput", frameData)
+            #Check for keyboard input 'q' = 113 in ASCII
+            #if cv2.waitKey(1) == 113:
+            #    break
+
+
+            #Publishing the data over a specified topic to all the clients
+            #Name of Topic is the first bytes of the message
+            #zmq.SNDMORE signals that more data will come (and not only the name of the topic)
+            #self.socket_pub_video.send_string(self.topic_video, zmq.SNDMORE)
+            #print(f"Sent frame {i}")
+
+            #self.socket_pub_audio.send_string(self.topic_audio, zmq.SNDMORE)
+            #print(f"Sent audio data {i}")
+            #print(audioInput)
+
             i=i+1
-            time.sleep(0.001)
-        #TODO Implement differently so that it works
+
         self.camera.release()
         cv2.destroyAllWindows()
 

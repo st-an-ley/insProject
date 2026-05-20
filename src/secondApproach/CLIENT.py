@@ -62,8 +62,8 @@ class videoCheck_client(Client):
         
         #Create SUBSCRIBER socket to receive data from the Server
         self.socket_video_sub = self.context.socket(zmq.SUB)   
-        self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") 
-        
+        self.socket_video_sub.setsockopt(zmq.SUBSCRIBE, b"") # encode() turns data into it's binary form
+        #f"{self.useCase}.encode('utf-8')"
         self.socket_video_sub.setsockopt(zmq.RCVHWM, self.recvHWM)        
         self.socket_video_sub.connect(f"{self.protocol}://localhost:{self.videoSUBport}") #5001
 
@@ -140,11 +140,8 @@ class videoCheck_client(Client):
                 if videoMetaData[0] == True:
                     #Send to topic "cheated"
                     self.socket_video_pub.send_string("cheated", zmq.SNDMORE)
-                    self.socket_video_pub.send(msgpack.packb(videoMetaData))
-                    
-                    #self.sendProofToGoogleSheets(videoDataOutputNumpyJpgBytes.tobytes())
-                    #streamlit doesnt need the proof in form of an image, it only needs to be sent to google sheets
-                    #self.socket_video_pub.send(videoDataOutputNumpyJpgBytes.tobytes()) #SEND IMAGE
+                    self.socket_video_pub.send(msgpack.packb(videoMetaData), zmq.SNDMORE)
+                    self.socket_video_pub.send(videoDataOutputNumpyJpgBytes.tobytes()) #SEND IMAGE
 
                 #-----------------------------------------------
 
@@ -196,7 +193,7 @@ class checkVideoDiffPerson_client(videoCheck_client):
         #TODO if cheated == true: cheated = True --> Make it variable and depending on the processing
         metaData = [cheated, self.topic, time.time(), "123456789", []]
         #TODO Draw rectangle at detected face
-        dataOutput = cv2.rectangle(videoInput, (200,200), (300,300), (255,0,0) ,1)
+        dataOutput = cv2.rectangle(videoInput, (100,100), (200,200), (255,0,0) ,1)
         return metaData, dataOutput
         #TODO Implement methods to check for cheating in video
 
@@ -295,12 +292,12 @@ class audioCheck_client(Client):
     def __init__(self, useCase="", messagingType="SUB", protocol="tcp"):
         Client.__init__(self, useCase=useCase, messagingType=messagingType, protocol=protocol)
         self.portPUB = 6002
-        self.audioSendRate = 512 #Amount of data samples sent per second
+        self.audioSendRate = 10 #Amount of data samples sent per second
 
         #IMPORTANT Standard values for the buffer size of sending and receiving socket
         #Are different depending on subclass but should be higher than 1 for most use cases since audio is connected over time (different than to frames, atleast for our usercases)
         self.recvHWM = 1
-        self.sendHWM = 1
+        self.sendHWM = 1 
 
     #run method for this client only uses data from port 5002, so only audio, no video
     #Every client processing audio will need to receive data from port 5002
@@ -351,43 +348,41 @@ class audioCheck_client(Client):
             #-----------------------------------------------
 
 
-            if time.time() - lastTimeAudio > 1/self.audioSendRate:
+            #if time.time() - lastTimeAudio > 1/self.audioSendRate:
                 
-                #AUdio will be processed in any kind of way
-                #IMPORTANT Every client has output of the structure: 
-                #[0]=true/false if cheated
-                #[1]=clientName to specify message in streamlit
-                #[2]=timeStamp to know the time when cheating was detected
-                #[3]=matNr to find person in google sheets
-                #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
+            #AUdio will be processed in any kind of way
+            #IMPORTANT Every client has output of the structure: 
+            #[0]=true/false if cheated
+            #[1]=clientName to specify message in streamlit
+            #[2]=timeStamp to know the time when cheating was detected
+            #[3]=matNr to find person in google sheets
+            #[4]=specialInfo[] for some clients to save additional data like i.e. number of faces
 
-                audioMetaData, audioChunk = self.processAudio(audioDataInputBytes) 
+            audioMetaData, audioChunk = self.processAudio(audioDataInputBytes) 
 
 
-                #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
-                #-----------------------------------------------
-                #IMPORTANT Send topic as string
-                self.socket_audio_pub.send_string(f"{self.topic}", zmq.SNDMORE)
-                #IMPORTANT Send meta data for audio
+            #SEND BYTES TO SPECIFIF TOPIC WHICH CAN BE CHOSEN IN STREAMLIT
+            #-----------------------------------------------
+            #IMPORTANT Send topic as string
+            self.socket_audio_pub.send_string(f"{self.topic}", zmq.SNDMORE)
+            #IMPORTANT Send meta data for audio
+            self.socket_audio_pub.send(msgpack.packb(audioMetaData), zmq.SNDMORE)
+            #IMPORTANT Send audio chunk
+            self.socket_audio_pub.send(audioChunk)
+            #-----------------------------------------------
+
+            #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
+            #-----------------------------------------------
+            #IMPORTANT If cheating was detected, send data also to topic "cheated"
+            if audioMetaData[0] == True:
+                #Send to topic "cheated"
+                self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
                 self.socket_audio_pub.send(msgpack.packb(audioMetaData), zmq.SNDMORE)
-                #IMPORTANT Send audio chunk
                 self.socket_audio_pub.send(audioChunk)
-                #-----------------------------------------------
 
-                #SEND TO TOPIC "cheated" IF CHEATING WAS DETECTED
-                #-----------------------------------------------
-                #IMPORTANT If cheating was detected, send data also to topic "cheated"
-                if audioMetaData[0] == True:
-                    #Send to topic "cheated"
-                    self.socket_audio_pub.send_string("cheated", zmq.SNDMORE)
-                    self.socket_audio_pub.send(msgpack.packb(audioMetaData))
+            #-----------------------------------------------
 
-                    #Streamlit doesnt need the proof as audio chunk, only the message for google sheets
-                    #self.socket_audio_pub.send(audioChunk)
-
-                #-----------------------------------------------
-
-                lastTimeAudio = time.time()
+            lastTimeAudio = time.time()
         
     @abstractmethod
     def processAudio(self, audioInput):
