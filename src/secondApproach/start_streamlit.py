@@ -43,14 +43,14 @@ def start_streamlit():
     st.title("Remote exam surveillance")
     placeholder_cheatedStatus = st.empty()
     placeholder_cheatedStatus.success("No cheating detected.")
-    videoSelectionUser = st.pills("Video:", videoSelectionOptions,
+    videoSelectionUser = st.pills("Video:", st.session_state.videoSelectionOptions,
                                    selection_mode="single",
                                    key="video_selection")   
 
     placeholder_video = st.empty()
 
     audioSelectionOptions = ["microphoneSignal", "volume", "whispering", "spokenWords", "microphoneOff"]
-    audioSelectionUser = st.pills("Audio:", audioSelectionOptions,
+    audioSelectionUser = st.pills("Audio:", st.session_state.audioSelectionOptions,
                                    selection_mode="single",
                                    key="audio_selection")
 
@@ -76,7 +76,7 @@ def start_streamlit():
     videoPills_reaction()
     placeholder_video=st.empty()
 
-        #IMPORTANT Only runs, when user has chosen a different video pill
+    #IMPORTANT Only runs, when user has chosen a different video pill
     @st.fragment()
     def audioPills_reaction():
             audioSelectionUser = st.pills("Video:",st.session_state.audioSelectionOptions,selection_mode="single",key="audio_selection")
